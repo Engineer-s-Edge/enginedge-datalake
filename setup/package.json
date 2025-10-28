@@ -1,0 +1,19 @@
+{
+  "name": "setup",
+  "version": "1.0.0",
+  "main": "create-sample-news.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "create-sample": "node create-sample-news.js",
+    "remove-sample": "node remove-sample-news.js",
+    "cleanup": "node cleanup-news-articles.js",
+    "cleanup-dry-run": "node cleanup-news-articles.js --dry-run"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "aws-sdk": "^2.1692.0"
+  }
+}
