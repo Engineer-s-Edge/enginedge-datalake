@@ -35,7 +35,6 @@ A comprehensive local data lake setup with modern big data tools including MinIO
 ### 🗄️ Object Storage (MinIO)
 - **Purpose**: S3-compatible object storage for data lake files
 - **Port**: 9000 (API), 9001 (Console)
-- **Credentials**: minioadmin / minioadmin123
 - **Use Cases**: Store raw data, processed data, backups
 
 ### ⚡ Data Processing (Apache Spark)
@@ -52,13 +51,11 @@ A comprehensive local data lake setup with modern big data tools including MinIO
 ### 🔄 Orchestration (Apache Airflow)
 - **Purpose**: Workflow orchestration and scheduling
 - **Port**: 8082
-- **Credentials**: admin / admin123
 - **Use Cases**: ETL pipelines, data workflows, job scheduling
 
 ### 📊 Analytics (Jupyter Lab)
 - **Purpose**: Interactive data analysis and visualization
 - **Port**: 8888
-- **Token**: jupyter123
 - **Use Cases**: Data exploration, prototyping, visualization
 
 ### 🗃️ Metadata Store (PostgreSQL + Hive Metastore)
@@ -74,27 +71,40 @@ A comprehensive local data lake setup with modern big data tools including MinIO
 - At least 4GB RAM available for containers
 
 ### Launch the Data Lake
-
+1. Create a `.env` file from the `.env.example` file and configure the credentials.
+2. Run the launch script:
 ```powershell
 # Windows PowerShell
-.\datalake\launch-datalake.ps1
+.\launch-datalake.ps1
 ```
 
 ```bash
 # Linux/Mac
-cd datalake
 docker-compose up -d
 ```
 
 ### Access the Services
 
-| Service | URL | Credentials |
-|---------|-----|-------------|
-| MinIO Console | http://localhost:9001 | minioadmin / minioadmin123 |
-| Spark Master | http://localhost:8080 | - |
-| Trino | http://localhost:8090 | - |
-| Airflow | http://localhost:8082 | admin / admin123 |
-| Jupyter Lab | http://localhost:8888 | Token: jupyter123 |
+| Service | URL |
+|---------|-----|
+| MinIO Console | http://localhost:9001 |
+| Spark Master | http://localhost:8080 |
+| Trino | http://localhost:8090 |
+| Airflow | http://localhost:8082 |
+| Jupyter Lab | http://localhost:8888 |
+
+## Configuration
+Create a `.env` file in the root of the project and add the following environment variables:
+```
+MINIO_ROOT_USER=minioadmin
+MINIO_ROOT_PASSWORD=minioadmin123
+POSTGRES_USER=airflow
+POSTGRES_PASSWORD=airflow
+POSTGRES_DB=airflow
+AIRFLOW_USER=admin
+AIRFLOW_PASSWORD=admin123
+JUPYTER_TOKEN=jupyter123
+```
 
 ## Getting Started Guide
 
@@ -107,14 +117,14 @@ docker-compose up -d
 ### 2. Upload Sample Data
 ```python
 import boto3
-import pandas as pd
+import os
 
 # Connect to MinIO
 s3_client = boto3.client(
     's3',
     endpoint_url='http://localhost:9000',
-    aws_access_key_id='minioadmin',
-    aws_secret_access_key='minioadmin123'
+    aws_access_key_id=os.environ['MINIO_ROOT_USER'],
+    aws_secret_access_key=os.environ['MINIO_ROOT_PASSWORD']
 )
 
 # Create bucket and upload data
@@ -125,13 +135,14 @@ s3_client.create_bucket(Bucket='my-data')
 ### 3. Process Data with Spark
 ```python
 from pyspark.sql import SparkSession
+import os
 
 spark = SparkSession.builder \
     .appName("MyDataLakeJob") \
     .master("spark://localhost:7077") \
     .config("spark.hadoop.fs.s3a.endpoint", "http://localhost:9000") \
-    .config("spark.hadoop.fs.s3a.access.key", "minioadmin") \
-    .config("spark.hadoop.fs.s3a.secret.key", "minioadmin123") \
+    .config("spark.hadoop.fs.s3a.access.key", os.environ['MINIO_ROOT_USER']) \
+    .config("spark.hadoop.fs.s3a.secret.key", os.environ['MINIO_ROOT_PASSWORD']) \
     .getOrCreate()
 
 # Read data from MinIO
@@ -149,64 +160,39 @@ SELECT * FROM hive.default.my_table LIMIT 10;
 Create Python files in `./airflow/dags/` to define your data pipelines.
 
 ## Directory Structure
-
 ```
-datalake/
-├── docker-compose.yml          # Main orchestration file
-├── launch-datalake.ps1        # Launch script
+.
+├── docker-compose.yml
+├── launch-datalake.ps1
 ├── airflow/
-│   ├── dags/                  # Airflow DAGs
-│   └── plugins/               # Airflow plugins
-├── data/                      # Local data directory
-├── minio/
-│   └── config/                # MinIO configuration
-├── notebooks/                 # Jupyter notebooks
-│   └── Getting_Started.ipynb  # Starter notebook
+│   ├── dags/
+│   └── plugins/
+├── data/
+├── notebooks/
+│   └── Getting_Started.ipynb
 ├── postgres/
-│   └── init/                  # Database initialization scripts
+│   └── init/
 ├── spark/
-│   ├── conf/                  # Spark configuration
-│   ├── jars/                  # Spark JAR files
-│   └── apps/                  # Spark applications
+│   ├── conf/
+│   ├── jars/
+│   └── apps/
 └── trino/
-    ├── etc/                   # Trino configuration
-    └── catalog/               # Trino catalog definitions
+    ├── etc/
+    └── catalog/
 ```
-
-## Configuration
-
-### MinIO Configuration
-- **Endpoint**: http://localhost:9000
-- **Console**: http://localhost:9001
-- **Access Key**: minioadmin
-- **Secret Key**: minioadmin123
-
-### Spark Configuration
-- **Master URL**: spark://localhost:7077
-- **Web UI**: http://localhost:8080
-- **S3 Integration**: Configured for MinIO
-
-### Trino Configuration
-- **Coordinator**: http://localhost:8090
-- **Catalogs**: hive (default), memory
-- **S3 Integration**: Configured for MinIO
-
-### Airflow Configuration
-- **Web UI**: http://localhost:8082
-- **Database**: PostgreSQL
-- **Executor**: LocalExecutor
 
 ## Common Tasks
 
 ### Create a New Bucket in MinIO
 ```python
 import boto3
+import os
 
 s3_client = boto3.client(
     's3',
     endpoint_url='http://localhost:9000',
-    aws_access_key_id='minioadmin',
-    aws_secret_access_key='minioadmin123'
+    aws_access_key_id=os.environ['MINIO_ROOT_USER'],
+    aws_secret_access_key=os.environ['MINIO_ROOT_PASSWORD']
 )
 
 s3_client.create_bucket(Bucket='new-bucket')
@@ -214,7 +200,7 @@ s3_client.create_bucket(Bucket='new-bucket')
 
 ### Submit a Spark Job
 ```bash
-docker exec -it datalake-spark-master spark-submit \
+docker exec -it spark-master spark-submit \
     --master spark://spark-master:7077 \
     /opt/spark-apps/my-job.py
 ```
@@ -278,10 +264,10 @@ docker-compose restart [service-name]
 ### 1. Data Organization
 ```
 bucket/
-├── raw/              # Raw, unprocessed data
-├── processed/        # Cleaned and transformed data
-├── curated/          # Business-ready datasets
-└── archive/          # Historical data
+├── raw/
+├── processed/
+├── curated/
+└── archive/
 ```
 
 ### 2. File Formats
