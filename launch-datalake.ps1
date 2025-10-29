@@ -13,9 +13,6 @@ catch {
     exit 1
 }
 
-# Change to datalake directory (commented out by default)
-# Set-Location -Path "datalake"
-
 # Create data directories if they don't exist
 $directories = @("data", "notebooks", "spark/jars", "spark-apps")
 foreach ($dir in $directories) {

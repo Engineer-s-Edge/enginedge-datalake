@@ -2,9 +2,6 @@
 
 Write-Host "Stopping EnginEdge Data Lake..." -ForegroundColor Yellow
 
-# Change to datalake directory
-Set-Location -Path "datalake"
-
 # Stop all services
 docker-compose down
 
