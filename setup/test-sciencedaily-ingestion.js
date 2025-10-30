@@ -1,6 +1,5 @@
 const AWS = require('aws-sdk');
 const https = require('https');
-const crypto = require('crypto');
 
 // Configure S3 client for MinIO
 const s3Client = new AWS.S3({
@@ -13,12 +12,6 @@ const s3Client = new AWS.S3({
 });
 
 const BUCKET_NAME = 'news-articles';
-
-// Generate deterministic article ID based on URL and title
-function generateArticleId(url, title = '') {
-  const content = (url + title).trim();
-  return crypto.createHash('md5').update(content).digest('hex');
-}
 
 // ScienceDaily RSS feeds to test
 const SCIENCEDAILY_FEEDS = [

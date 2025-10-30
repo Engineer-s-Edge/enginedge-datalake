@@ -1,6 +1,4 @@
 const AWS = require('aws-sdk');
-const fs = require('fs');
-const path = require('path');
 const crypto = require('crypto');
 
 // Configure S3 client for MinIO
