@@ -42,8 +42,8 @@ The repository provides a powerful data lake solution with a wide range of capab
 *   [x] Address the hardcoded credentials by creating a `.env.example` file and updating the `README.md` and launch scripts.
 *   [x] Update the `README.md` to reflect the correct directory structure and remove references to the non-existent `datalake/` directory.
 *   [X] Add a `LICENSE` file to the repository.
-*   [ ] Add a `CONTRIBUTING.md` file to the repository.
-*   [ ] Add a `.dockerignore` file to the repository.
+*   [X] Add a `CONTRIBUTING.md` file to the repository.
+*   [X] Add a `.dockerignore` file to the repository.
 *   [X] Add a linter to the repository to enforce code quality.
 *   [ ] Add a CI/CD pipeline to the repository to automate testing and deployment.
 *   [ ] Add a testing framework to the repository to test the data lake components.
