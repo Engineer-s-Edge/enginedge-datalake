@@ -1,0 +1,64 @@
+# Ignore node and package manager artifacts
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Python artifacts and virtual envs
+__pycache__/
+*.py[cod]
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+.eggs/
+.venv/
+venv/
+venv.bak/
+pip-wheel-metadata/
+*.pytest_cache/
+.env
+
+# Jupyter / notebooks
+.ipynb_checkpoints/
+notebooks/
+*.ipynb
+
+# Git
+.git
+.gitignore
+
+# IDEs and editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs and temp files
+logs/
+*.log
+tmp/
+temp/
+*.tmp
+
+# Docker / compose overrides
+docker-compose.override.yml
+Dockerfile.*.local
+
+# Build outputs / artifacts
+dist/
+target/
+build/
+
+# Data / local artifacts
+data/
+output/
+*.parquet
+*.csv
