@@ -112,6 +112,19 @@ services:
     networks:
       - datalake-network
 
+  great_expectations:
+    image: greatexpectations/great_expectations:0.18.9
+    ports:
+      - "4000:8000"
+    volumes:
+      - ./great_expectations:/usr/app/great_expectations
+    depends_on:
+      - spark-master
+      - postgres
+    networks:
+      - datalake-network
+    command: "python -m http.server 8000 -d /usr/app/great_expectations/uncommitted/data_docs/local_site"
+
 volumes:
   minio_data:
   postgres_data:
