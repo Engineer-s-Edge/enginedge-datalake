@@ -63,6 +63,11 @@ A comprehensive local data lake setup with modern big data tools including MinIO
 - **Port**: 5432
 - **Use Cases**: Table definitions, data catalog, lineage
 
+### 🧐 Data Quality (Great Expectations)
+- **Purpose**: Data validation and quality checks
+- **Port**: 4000
+- **Use Cases**: Data quality reports, data validation pipelines
+
 ## Quick Start
 
 ### Prerequisites
@@ -92,6 +97,7 @@ docker-compose up -d
 | Trino | http://localhost:8090 |
 | Airflow | http://localhost:8082 |
 | Jupyter Lab | http://localhost:8888 |
+| Great Expectations | http://localhost:4000 |
 
 ## Configuration
 Create a `.env` file in the root of the project and add the following environment variables:
@@ -114,7 +120,11 @@ JUPYTER_TOKEN=jupyter123
 3. Run the `Getting_Started.ipynb` notebook
 4. Explore the MinIO console to see your data
 
-### 2. Upload Sample Data
+### 2. Data Quality with Great Expectations
+1. Open Jupyter Lab at http://localhost:8888
+2. Run the `Data_Quality_with_Great_Expectations.ipynb` notebook to learn how to validate data and generate data quality reports.
+
+### 3. Upload Sample Data
 ```python
 import boto3
 import os
