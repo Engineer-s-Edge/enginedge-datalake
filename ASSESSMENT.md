@@ -48,6 +48,7 @@ The repository provides a powerful data lake solution with a wide range of capab
 ## In Progress
 
 *   [ ] Add a data lineage solution to the repository to track the lineage of the data in the data lake.
+*   [ ] Convert datalake from compose based to k8 based
 
 ## Completed
 
