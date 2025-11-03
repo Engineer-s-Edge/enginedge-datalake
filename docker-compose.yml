@@ -28,7 +28,7 @@ services:
       - datalake-network
 
   hive-metastore:
-    image: bitsudata/hive:3.1.2-metastore
+    image: sslhep/hive-metastore:3.1.3
     environment:
       SERVICE_NAME: metastore
       DB_TYPE: postgres
@@ -42,28 +42,49 @@ services:
 
   spark-master:
     image: bde2020/spark-master:3.3.0-hadoop3.3
+    user: root
     ports:
       - "8080:8080"
       - "7077:7077"
     volumes:
       - ./spark/apps:/opt/spark-apps
-      - ./spark/jars:/opt/spark-jars
     environment:
       SPARK_MASTER_HOST: spark-master
+    command: >
+      bash -c "
+        apt-get update && apt-get install -y curl &&
+        cd /opt/spark/jars &&
+        curl -O https://repo1.maven.org/maven2/io/openlineage/openlineage-spark_2.12/1.39.0/openlineage-spark_2.12-1.39.0.jar &&
+        echo 'spark.extraListeners io.openlineage.spark.agent.OpenLineageSparkListener' > /opt/spark/conf/spark-defaults.conf &&
+        echo 'spark.openlineage.transport.type http' >> /opt/spark/conf/spark-defaults.conf &&
+        echo 'spark.openlineage.transport.url http://marquez-api:5000' >> /opt/spark/conf/spark-defaults.conf &&
+        echo 'spark.openlineage.namespace datalake' >> /opt/spark/conf/spark-defaults.conf &&
+        chown -R spark:spark /opt/spark/conf &&
+        chown -R spark:spark /opt/spark/jars &&
+        su spark -c '/opt/spark/bin/spark-class org.apache.spark.deploy.master.Master'
+      "
     networks:
       - datalake-network
 
   spark-worker:
     image: bde2020/spark-worker:3.3.0-hadoop3.3
+    user: root
     depends_on:
       - spark-master
     ports:
       - "8081:8081"
     volumes:
       - ./spark/apps:/opt/spark-apps
-      - ./spark/jars:/opt/spark-jars
     environment:
       SPARK_MASTER: spark://spark-master:7077
+    command: >
+      bash -c "
+        apt-get update && apt-get install -y curl &&
+        cd /opt/spark/jars &&
+        curl -O https://repo1.maven.org/maven2/io/openlineage/openlineage-spark_2.12/1.39.0/openlineage-spark_2.12-1.39.0.jar &&
+        chown -R spark:spark /opt/spark/jars &&
+        su spark -c '/opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077'
+      "
     networks:
       - datalake-network
 
@@ -80,7 +101,8 @@ services:
       - datalake-network
 
   airflow:
-    image: apache/airflow:2.6.3
+    build:
+      context: ./airflow
     ports:
       - "8082:8080"
     volumes:
@@ -96,6 +118,7 @@ services:
       _AIRFLOW_WWW_USER_CREATE: "true"
       _AIRFLOW_WWW_USER_USERNAME: ${AIRFLOW_USER:-admin}
       _AIRFLOW_WWW_USER_PASSWORD: ${AIRFLOW_PASSWORD:-admin123}
+      AIRFLOW__OPENLINEAGE__TRANSPORT: '{"type": "http", "url": "http://marquez-api:5000"}'
     depends_on:
       - postgres
     networks:
@@ -113,7 +136,7 @@ services:
       - datalake-network
 
   great_expectations:
-    image: greatexpectations/great_expectations:0.18.9
+    image: powerdatahub/great-expectations-docker:0.8.7
     ports:
       - "4000:8000"
     volumes:
@@ -125,11 +148,55 @@ services:
       - datalake-network
     command: "python -m http.server 8000 -d /usr/app/great_expectations/uncommitted/data_docs/local_site"
 
+  marquez-api:
+    image: "marquezproject/marquez:0.51.1"
+    container_name: marquez-api
+    ports:
+      - "5000:5000"
+      - "5001:5001"
+    environment:
+      - MARQUEZ_PORT=5000
+      - MARQUEZ_ADMIN_PORT=5001
+      - POSTGRES_HOST=marquez-db
+      - POSTGRES_PORT=5432
+    depends_on:
+      - marquez-db
+    networks:
+      - datalake-network
+
+  marquez-db:
+    image: postgres:14
+    container_name: marquez-db
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_USER=marquez
+      - POSTGRES_PASSWORD=marquez
+      - POSTGRES_DB=marquez
+    volumes:
+      - marquez_data:/var/lib/postgresql/data
+    networks:
+      - datalake-network
+
+  marquez-web:
+    image: "marquezproject/marquez-web:0.51.1"
+    container_name: marquez-web
+    ports:
+      - "3000:3000"
+    environment:
+      - MARQUEZ_HOST=marquez-api
+      - MARQUEZ_PORT=5000
+    depends_on:
+      - marquez-api
+    networks:
+      - datalake-network
+
 volumes:
   minio_data:
   postgres_data:
   airflow_logs:
   airflow_plugins:
+  marquez_data:
 
 networks:
   datalake-network:
