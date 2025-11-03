@@ -37,6 +37,20 @@ The repository provides a powerful data lake solution with a wide range of capab
 
 ## Todo List
 
+*   [X] Add a linter to the repository to enforce code quality.
+*   [ ] Add a CI/CD pipeline to the repository to automate testing and deployment.
+*   [ ] Add a testing framework to the repository to test the data lake components.
+*   [ ] Add a monitoring solution to the repository to monitor the data lake components.
+*   [ ] Add a logging solution to the repository to log the data lake components.
+*   [ ] Add a data discovery solution to the repository to discover the data in the data lake.
+*   [ ] Add a data governance solution to the repository to govern the data in the data lake.
+
+## In Progress
+
+*   [ ] Add a data lineage solution to the repository to track the lineage of the data in the data lake.
+
+## Completed
+
 *   [x] Create a `docker-compose.yml` file to define the services.
 *   [x] Fix the launch scripts to ensure they correctly use the `docker-compose.yml` file.
 *   [x] Address the hardcoded credentials by creating a `.env.example` file and updating the `README.md` and launch scripts.
@@ -44,12 +58,4 @@ The repository provides a powerful data lake solution with a wide range of capab
 *   [X] Add a `LICENSE` file to the repository.
 *   [X] Add a `CONTRIBUTING.md` file to the repository.
 *   [X] Add a `.dockerignore` file to the repository.
-*   [X] Add a linter to the repository to enforce code quality.
-*   [ ] Add a CI/CD pipeline to the repository to automate testing and deployment.
-*   [ ] Add a testing framework to the repository to test the data lake components.
-*   [ ] Add a monitoring solution to the repository to monitor the data lake components.
-*   [ ] Add a logging solution to the repository to log the data lake components.
 *   [X] Add a data quality solution to the repository to ensure the quality of the data in the data lake.
-*   [ ] Add a data lineage solution to the repository to track the lineage of the data in the data lake.
-*   [ ] Add a data discovery solution to the repository to discover the data in the data lake.
-*   [ ] Add a data governance solution to the repository to govern the data in the data lake.
