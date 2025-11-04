@@ -5,16 +5,6 @@
 - Add Services with labels (app: enginedge, component: <svc>) and expose health/metrics where available
 - Add values files for local cluster (storage classes / PVs)
 
-## Observability
-- [x] Expose Prometheus metrics endpoints (where supported) for ServiceMonitors:
-  - [x] Trino: /v1/metrics (configure Prometheus JMX exporter if needed)
-  - [x] Spark: JMX exporter sidecar for driver/executors
-  - [x] Airflow: /health (/metrics via exporter if desired)
-  - [x] MinIO: /minio/v2/metrics/cluster
-  - [x] Postgres: postgres_exporter sidecar
-- [x] Create ServiceMonitors under enginedge-core/platform/k8s/observability/servicemonitors/
-- [x] Add Grafana dashboards (ConfigMaps) for Trino/Spark/MinIO/Postgres
-
 ## Storage & Secrets
 - Define PVCs/SCs for Postgres, MinIO buckets
 - Kubernetes Secrets for database creds, MinIO keys (reuse minio-secret if shared)
@@ -26,12 +16,6 @@
 - Add GitHub Actions deploy job: build/push images (if custom) and helm upgrade --install for datalake chart(s)
 - Add docker compose config validation (already present)
 
-## Integration with Core
-- Ensure data-processing-worker and scheduling-model envs point to Trino/S3 endpoints when applicable
-- [x] Ensure API Gateway does not expose datalake UIs publicly (admin-only)
-- [x] Create observability API endpoint for datalake health/metrics monitoring
-- [x] Integrate datalake into API Gateway with role-based access control
-
 ## Rollout Steps
 - Helm install datalake chart(s)
 - Apply ServiceMonitors and dashboards
@@ -39,7 +23,6 @@
 - Run smoke queries (Trino) and basic Spark job
 
 ## Todo List
-
 
 *   [ ] Add a CI/CD pipeline to the repository to automate testing and deployment.
 *   [ ] Add a testing framework to the repository to test the data lake components.
@@ -64,3 +47,17 @@
 *   [X] Add a `.dockerignore` file to the repository.
 *   [X] Add a data quality solution to the repository to ensure the quality of the data in the data lake.
 *   [X] Add a linter to the repository to enforce code quality.
+## Observability
+- [x] Expose Prometheus metrics endpoints (where supported) for ServiceMonitors:
+  - [x] Trino: /v1/metrics (configure Prometheus JMX exporter if needed)
+  - [x] Spark: JMX exporter sidecar for driver/executors
+  - [x] Airflow: /health (/metrics via exporter if desired)
+  - [x] MinIO: /minio/v2/metrics/cluster
+  - [x] Postgres: postgres_exporter sidecar
+- [x] Create ServiceMonitors under enginedge-core/platform/k8s/observability/servicemonitors/
+- [x] Add Grafana dashboards (ConfigMaps) for Trino/Spark/MinIO/Postgres
+## Integration with Core
+- Ensure data-processing-worker and scheduling-model envs point to Trino/S3 endpoints when applicable
+- [x] Ensure API Gateway does not expose datalake UIs publicly (admin-only)
+- [x] Create observability API endpoint for datalake health/metrics monitoring
+- [x] Integrate datalake into API Gateway with role-based access control
