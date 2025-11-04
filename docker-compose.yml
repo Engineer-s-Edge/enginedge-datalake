@@ -191,6 +191,34 @@ services:
     networks:
       - datalake-network
 
+  datalake-observability:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: datalake-observability
+    ports:
+      - "3010:3010"
+    environment:
+      - PORT=3010
+      - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_CONSOLE_URL=http://minio:9001
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin123
+      - TRINO_URL=http://trino:8080
+      - AIRFLOW_URL=http://airflow:8080
+      - SPARK_MASTER_URL=http://spark-master:8080
+      - JUPYTER_URL=http://jupyter:8888
+      - POSTGRES_URL=postgres:5432
+      - MARQUEZ_API_URL=http://marquez-api:5000
+      - MARQUEZ_WEB_URL=http://marquez-web:3000
+    depends_on:
+      - minio
+      - trino
+      - airflow
+      - spark-master
+    networks:
+      - datalake-network
+
 volumes:
   minio_data:
   postgres_data:

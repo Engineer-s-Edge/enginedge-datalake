@@ -6,14 +6,14 @@
 - Add values files for local cluster (storage classes / PVs)
 
 ## Observability
-- Expose Prometheus metrics endpoints (where supported) for ServiceMonitors:
-  - Trino: /v1/metrics (configure Prometheus JMX exporter if needed)
-  - Spark: JMX exporter sidecar for driver/executors
-  - Airflow: /health (/metrics via exporter if desired)
-  - MinIO: /minio/v2/metrics/cluster
-  - Postgres: postgres_exporter sidecar
-- Create ServiceMonitors under enginedge-core/platform/k8s/observability/servicemonitors/
-- Add Grafana dashboards (ConfigMaps) for Trino/Spark/MinIO/Postgres
+- [x] Expose Prometheus metrics endpoints (where supported) for ServiceMonitors:
+  - [x] Trino: /v1/metrics (configure Prometheus JMX exporter if needed)
+  - [x] Spark: JMX exporter sidecar for driver/executors
+  - [x] Airflow: /health (/metrics via exporter if desired)
+  - [x] MinIO: /minio/v2/metrics/cluster
+  - [x] Postgres: postgres_exporter sidecar
+- [x] Create ServiceMonitors under enginedge-core/platform/k8s/observability/servicemonitors/
+- [x] Add Grafana dashboards (ConfigMaps) for Trino/Spark/MinIO/Postgres
 
 ## Storage & Secrets
 - Define PVCs/SCs for Postgres, MinIO buckets
@@ -28,7 +28,9 @@
 
 ## Integration with Core
 - Ensure data-processing-worker and scheduling-model envs point to Trino/S3 endpoints when applicable
-- Ensure API Gateway does not expose datalake UIs publicly (admin-only)
+- [x] Ensure API Gateway does not expose datalake UIs publicly (admin-only)
+- [x] Create observability API endpoint for datalake health/metrics monitoring
+- [x] Integrate datalake into API Gateway with role-based access control
 
 ## Rollout Steps
 - Helm install datalake chart(s)

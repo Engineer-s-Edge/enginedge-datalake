@@ -334,6 +334,63 @@ For issues and questions:
 3. Consult component documentation
 4. Open an issue in the project repository
 
+## Observability & Monitoring
+
+### Observability API
+
+The datalake includes an observability API that exposes health and metrics endpoints:
+
+```bash
+# Health check
+curl http://localhost:3010/api/observability/health
+
+# Metrics
+curl http://localhost:3010/api/observability/metrics
+```
+
+### Prometheus Integration
+
+ServiceMonitors are configured for all datalake services:
+- MinIO cluster metrics (`/minio/v2/metrics/cluster`)
+- Trino query metrics (`/v1/metrics`)
+- Airflow health (`/health`)
+- Spark metrics (`/metrics/json`)
+
+### Grafana Dashboard
+
+A comprehensive dashboard is available showing:
+- Service health status
+- Storage capacity and usage
+- Active queries and jobs
+- DAG run statistics
+
+### API Gateway Integration (Admin-Only)
+
+All datalake UIs are accessible through the API Gateway with admin-only access:
+
+```bash
+# Login as admin
+TOKEN=$(curl -X POST http://api-gateway:3001/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"admin"}' \
+  | jq -r '.accessToken')
+
+# Access MinIO Console (admin only)
+curl http://api-gateway:3001/datalake/minio/ \
+  -H "Authorization: Bearer $TOKEN"
+
+# Access other datalake UIs
+curl http://api-gateway:3001/datalake/trino/ -H "Authorization: Bearer $TOKEN"
+curl http://api-gateway:3001/datalake/airflow/ -H "Authorization: Bearer $TOKEN"
+curl http://api-gateway:3001/datalake/jupyter/ -H "Authorization: Bearer $TOKEN"
+curl http://api-gateway:3001/datalake/spark/ -H "Authorization: Bearer $TOKEN"
+curl http://api-gateway:3001/datalake/marquez/ -H "Authorization: Bearer $TOKEN"
+```
+
+**Security**: Non-admin users will receive a `403 Forbidden` error when attempting to access datalake UIs.
+
+See [INTEGRATION.md](INTEGRATION.md) for detailed documentation on the API Gateway integration.
+
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
