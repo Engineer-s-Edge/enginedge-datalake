@@ -34,7 +34,7 @@
 ## In Progress
 
 *   [ ] Add a data lineage solution to the repository to track the lineage of the data in the data lake.
-*   [ ] Convert datalake from compose based to k8 based
+
 
 ## Completed
 
@@ -47,6 +47,7 @@
 *   [X] Add a `.dockerignore` file to the repository.
 *   [X] Add a data quality solution to the repository to ensure the quality of the data in the data lake.
 *   [X] Add a linter to the repository to enforce code quality.
+*   [X] Convert datalake from compose based to k8 based
 ## Observability
 - [x] Expose Prometheus metrics endpoints (where supported) for ServiceMonitors:
   - [x] Trino: /v1/metrics (configure Prometheus JMX exporter if needed)
