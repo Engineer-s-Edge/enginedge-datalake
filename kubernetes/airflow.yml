@@ -1,0 +1,107 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: airflow-logs-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: airflow-plugins-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: airflow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: airflow
+  template:
+    metadata:
+      labels:
+        app: airflow
+    spec:
+      containers:
+        - name: airflow
+          image: apache/airflow:2.7.2
+          ports:
+            - containerPort: 8080
+          env:
+            - name: AIRFLOW__CORE__EXECUTOR
+              value: LocalExecutor
+            - name: AIRFLOW__DATABASE__SQL_ALCHEMY_CONN
+              value: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+            - name: AIRFLOW__CORE__LOAD_EXAMPLES
+              value: "false"
+            - name: AIRFLOW_UID
+              value: "50000"
+            - name: _AIRFLOW_DB_UPGRADE
+              value: "true"
+            - name: _AIRFLOW_WWW_USER_CREATE
+              value: "true"
+            - name: _AIRFLOW_WWW_USER_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: datalake-secrets
+                  key: AIRFLOW_USER
+            - name: _AIRFLOW_WWW_USER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: datalake-secrets
+                  key: AIRFLOW_PASSWORD
+            - name: AIRFLOW__OPENLINEAGE__TRANSPORT
+              value: '{"type": "http", "url": "http://marquez-api:5000"}'
+          volumeMounts:
+            - name: airflow-dags
+              mountPath: /opt/airflow/dags
+            - name: airflow-logs
+              mountPath: /opt/airflow/logs
+            - name: airflow-plugins
+              mountPath: /opt/airflow/plugins
+      volumes:
+        - name: airflow-dags
+          configMap:
+            name: airflow-dags-cm
+        - name: airflow-logs
+          persistentVolumeClaim:
+            claimName: airflow-logs-pvc
+        - name: airflow-plugins
+          persistentVolumeClaim:
+            claimName: airflow-plugins-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: airflow
+spec:
+  selector:
+    app: airflow
+  ports:
+    - port: 8080
+      targetPort: 8080
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: airflow-dags-cm
+data:
+  example-dag.py: |
+    from airflow import DAG
+    from airflow.operators.bash import BashOperator
+    from datetime import datetime
+
+    with DAG('example_dag', start_date=datetime(2023, 1, 1), schedule_interval=None, catchup=False) as dag:
+        BashOperator(task_id='hello', bash_command='echo "Hello World"')
