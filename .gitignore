@@ -47,6 +47,7 @@ trino/var/
 .env.local
 .env.production
 .env.staging
+kubernetes/secrets.yml
 
 # OS generated files
 .DS_Store

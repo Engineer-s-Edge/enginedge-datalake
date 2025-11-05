@@ -88,6 +88,15 @@ A comprehensive local data lake setup with modern big data tools including MinIO
 docker-compose up -d
 ```
 
+### Kubernetes Deployment
+
+Alternatively, you can deploy the data lake to a Kubernetes cluster. For detailed instructions, see the [Kubernetes README](./kubernetes/README.md).
+
+To deploy, run the following command:
+```bash
+kubectl apply -f kubernetes/
+```
+
 ### Access the Services
 
 | Service | URL |
