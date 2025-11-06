@@ -182,7 +182,7 @@ services:
     image: "marquezproject/marquez-web:0.51.1"
     container_name: marquez-web
     ports:
-      - "3000:3000"
+      - "3001:3000"
     environment:
       - MARQUEZ_HOST=marquez-api
       - MARQUEZ_PORT=5000
