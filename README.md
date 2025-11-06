@@ -73,6 +73,11 @@ A comprehensive local data lake setup with modern big data tools including MinIO
 - **Port**: 3001
 - **Use Cases**: Data discovery, data lineage, metadata management
 
+### 🏛️ Data Governance (Tokern)
+- **Purpose**: Data governance and compliance
+- **Port**: 8001
+- **Use Cases**: Data catalog, data lineage, access control
+
 ## Quick Start
 
 ### Prerequisites
@@ -113,6 +118,7 @@ kubectl apply -f kubernetes/
 | Jupyter Lab | http://localhost:8888 |
 | Great Expectations | http://localhost:4000 |
 | Marquez | http://localhost:3001 |
+| Tokern | http://localhost:8001 |
 
 ## Configuration
 Create a `.env` file in the root of the project and add the following environment variables:

@@ -24,6 +24,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-airflow}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-airflow}
       POSTGRES_DB: ${POSTGRES_DB:-airflow}
+      TOKERN_USER_PASSWORD: ${TOKERN_USER_PASSWORD:-admin123}
     networks:
       - datalake-network
 
@@ -218,6 +219,42 @@ services:
       - spark-master
     networks:
       - datalake-network
+
+  tokern-redis:
+    image: redis:6.2.6-alpine
+    container_name: tokern-redis
+    restart: unless-stopped
+    networks:
+      - datalake-network
+
+  tokern-api:
+    image: tokern/data-lineage:latest
+    container_name: tokern-data-lineage
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - tokern-redis
+    networks:
+      - datalake-network
+    environment:
+      CATALOG_PASSWORD: ${TOKERN_USER_PASSWORD:-admin123}
+      CATALOG_USER: tokern_admin
+      CATALOG_DB: ${POSTGRES_DB:-airflow}
+      CATALOG_HOST: postgres
+      CATALOG_PORT: 5432
+      GUNICORN_CMD_ARGS: "--bind 0.0.0.0:4142"
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      REDIS_HOST: tokern-redis
+      REDIS_PORT: ${REDIS_PORT:-6379}
+
+  tokern-viz:
+    image: tokern/data-lineage-viz:latest
+    container_name: tokern-data-lineage-visualizer
+    restart: unless-stopped
+    networks:
+      - datalake-network
+    ports:
+      - "8001:80"
 
 volumes:
   minio_data:
