@@ -68,6 +68,11 @@ A comprehensive local data lake setup with modern big data tools including MinIO
 - **Port**: 4000
 - **Use Cases**: Data quality reports, data validation pipelines
 
+### 🌐 Data Discovery (Marquez)
+- **Purpose**: Data lineage and metadata management
+- **Port**: 3001
+- **Use Cases**: Data discovery, data lineage, metadata management
+
 ## Quick Start
 
 ### Prerequisites
@@ -107,6 +112,7 @@ kubectl apply -f kubernetes/
 | Airflow | http://localhost:8082 |
 | Jupyter Lab | http://localhost:8888 |
 | Great Expectations | http://localhost:4000 |
+| Marquez | http://localhost:3001 |
 
 ## Configuration
 Create a `.env` file in the root of the project and add the following environment variables:
