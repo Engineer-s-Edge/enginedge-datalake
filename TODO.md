@@ -32,10 +32,17 @@
 
 ## In Progress
 
-*   [ ] Add a data lineage solution to the repository to track the lineage of the data in the data lake.
-
-
 ## Completed
+
+*   [X] Add a data lineage solution to the repository to track the lineage of the data in the data lake.
+    - Marquez (OpenLineage backend) for lineage storage and API
+    - Tokern for data governance and lineage visualization
+    - OpenLineage integration with Spark and Airflow
+    - Comprehensive documentation in DATA_LINEAGE.md
+    - Example Spark jobs demonstrating lineage tracking
+    - Example Airflow DAG with lineage tracking
+    - Jupyter notebook for querying and visualizing lineage
+    - Python SDK examples for programmatic lineage tracking
 
 *   [x] Create a `docker-compose.yml` file to define the services.
 *   [x] Fix the launch scripts to ensure they correctly use the `docker-compose.yml` file.
