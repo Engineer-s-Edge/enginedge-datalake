@@ -94,7 +94,11 @@ A comprehensive local data lake setup with modern big data tools including MinIO
 
 ### Launch the Data Lake
 1. Create a `.env` file from the `.env.example` file and configure the credentials.
-2. Run the launch script:
+2. Install dependencies for the observability API:
+```bash
+npm install
+```
+3. Run the launch script:
 ```powershell
 # Windows PowerShell
 .\launch-datalake.ps1
@@ -328,11 +332,33 @@ bucket/
 - Implement access controls
 - Regular security audits
 
-### 4. Monitoring
+### 4. Monitoring & Logging
 - Monitor resource usage
 - Set up alerts for job failures
 - Track data quality metrics
 - Implement data lineage
+
+**Logging Infrastructure**: The datalake includes a comprehensive Winston-based logging solution. See [Logging Documentation](src/infrastructure/logging/README.md) for details.
+
+Key logging features:
+- Pretty console output with colors and timestamps
+- Automatic file rotation with compression
+- Request ID tracking across async operations
+- Sensitive data redaction (passwords, tokens, API keys)
+- HTTP request/response logging
+- Optional Sentry integration for error tracking
+
+Configure logging via environment variables:
+```bash
+LOG_LEVEL=info          # Log level: error, warn, info, http, verbose, debug
+LOG_DIR=logs            # Directory for log files
+LOG_ENABLE_CONSOLE=true # Enable console logging
+LOG_ENABLE_FILES=true   # Enable file logging
+```
+
+Log files are created in the `logs/` directory:
+- `enginedge-datalake-YYYY-MM-DD-combined.log` - All logs
+- `enginedge-datalake-YYYY-MM-DD-error.log` - Errors only
 
 ## Extending the Data Lake
 

@@ -1,13 +1,18 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { KafkaLoggerService } from './infrastructure/logging/kafka-logger.service';
+import { MyLogger } from './infrastructure/logging/logger.service';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  app.useLogger(app.get(KafkaLoggerService));
+  const app = await NestFactory.create(AppModule, {
+    bufferLogs: true,
+  });
+  
+  const logger = await app.resolve(MyLogger);
+  app.useLogger(logger);
+  
   app.setGlobalPrefix('api');
   const port = process.env.PORT || 3010;
   await app.listen(port);
-  console.log(`Datalake Observability API running on port ${port}`);
+  logger.info(`Datalake Observability API running on port ${port}`, 'Bootstrap');
 }
 bootstrap();

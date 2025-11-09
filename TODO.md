@@ -27,13 +27,20 @@
 *   [ ] Add a CI/CD pipeline to the repository to automate testing and deployment.
 *   [ ] Add a testing framework to the repository to test the data lake components.
 *   [ ] Add a monitoring solution to the repository to monitor the data lake components.
-*   [ ] Add a logging solution to the repository to log the data lake components.
 
 
 ## In Progress
 
 ## Completed
 
+*   [X] Add a logging solution to the repository to log the data lake components.
+    - Implemented Winston-based logging solution from EnginEdge monorepo
+    - MyLogger service with pretty console output and file rotation
+    - RequestContextService for request ID tracking across async operations
+    - HttpLoggerMiddleware for automatic HTTP request/response logging
+    - Supports multiple log levels, redaction of sensitive data, file rotation, and Sentry integration
+    - Configurable via environment variables (LOG_LEVEL, LOG_DIR, LOG_ENABLE_CONSOLE, LOG_ENABLE_FILES, etc.)
+    
 *   [X] Add a data lineage solution to the repository to track the lineage of the data in the data lake.
     - Marquez (OpenLineage backend) for lineage storage and API
     - Tokern for data governance and lineage visualization
