@@ -26,7 +26,7 @@
 
 *   [ ] Add a CI/CD pipeline to the repository to automate testing and deployment.
 *   [ ] Add a testing framework to the repository to test the data lake components.
-*   [ ] Add a monitoring solution to the repository to monitor the data lake components.
+
 
 
 ## In Progress
@@ -63,6 +63,7 @@
 *   [X] Convert datalake from compose based to k8 based
 *   [X] Add a data discovery solution to the repository to discover the data in the data lake.
 *   [X] Add a data governance solution to the repository to govern the data in the data lake.
+*   [X] Add a monitoring solution to the repository to monitor the data lake components.
 ## Observability
 - [x] Expose Prometheus metrics endpoints (where supported) for ServiceMonitors:
   - [x] Trino: /v1/metrics (configure Prometheus JMX exporter if needed)
