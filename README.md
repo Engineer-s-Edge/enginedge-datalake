@@ -454,6 +454,27 @@ curl http://api-gateway:3001/datalake/marquez/ -H "Authorization: Bearer $TOKEN"
 
 See [INTEGRATION.md](INTEGRATION.md) for detailed documentation on the API Gateway integration.
 
+## Testing
+
+This project uses `pytest` for testing the data lake components. The tests are located in the `tests/` directory.
+
+### Prerequisites
+
+- The data lake should be running.
+- Python 3 and `pip` should be installed.
+
+### Running the Tests
+
+1. Install the test dependencies:
+   ```bash
+   pip install -r requirements-test.txt
+   ```
+
+2. Run the tests using `pytest`:
+   ```bash
+   pytest tests/
+   ```
+
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
