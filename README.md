@@ -1,5 +1,10 @@
 # EnginEdge Data Lake
 
+[![CI/CD](https://github.com/Chris-Alexander-Pop/enginedge-datalake/actions/workflows/datalake-ci.yml/badge.svg)](https://github.com/Chris-Alexander-Pop/enginedge-datalake/actions/workflows/datalake-ci.yml)
+[![Deploy](https://github.com/Chris-Alexander-Pop/enginedge-datalake/actions/workflows/deploy.yml/badge.svg)](https://github.com/Chris-Alexander-Pop/enginedge-datalake/actions/workflows/deploy.yml)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](docker-compose.yml)
+
 A comprehensive local data lake setup with modern big data tools including MinIO, Apache Spark, Trino, Apache Airflow, and Jupyter Lab.
 
 ## Architecture
@@ -454,6 +459,58 @@ curl http://api-gateway:3001/datalake/marquez/ -H "Authorization: Bearer $TOKEN"
 
 See [INTEGRATION.md](INTEGRATION.md) for detailed documentation on the API Gateway integration.
 
+## CI/CD Pipeline
+
+This repository includes a comprehensive CI/CD pipeline that automates testing, security scanning, and deployment.
+
+### Features
+
+- ✅ **Automated Testing**: Python tests across multiple versions (3.9, 3.10, 3.11)
+- 🔒 **Security Scanning**: Trivy vulnerability scanning for code and Docker images
+- 🐳 **Docker Build**: Automated image building and pushing to GitHub Container Registry
+- 🚀 **Automated Deployment**: Deploy to Kubernetes or Docker Compose
+- 📊 **Code Coverage**: Integrated coverage reporting
+- 🔄 **Dependency Updates**: Weekly automated dependency checks
+
+### Workflows
+
+1. **CI Pipeline** (`.github/workflows/datalake-ci.yml`)
+   - Runs on every push and pull request
+   - Code quality checks, tests, security scans
+   - Builds and pushes Docker images
+
+2. **Deployment Pipeline** (`.github/workflows/deploy.yml`)
+   - Manual or tag-based deployments
+   - Supports multiple environments (dev, staging, production)
+   - Includes smoke tests and rollback capability
+
+3. **Dependency Updates** (`.github/workflows/dependency-update.yml`)
+   - Weekly automated checks for outdated packages
+   - Creates pull requests for updates
+
+4. **Release Management** (`.github/workflows/release.yml`)
+   - Automated release notes generation
+   - Creates GitHub releases from tags
+
+### Quick Start
+
+```bash
+# Push to dev branch triggers CI
+git push origin dev
+
+# Create a release
+git tag -a v1.0.0 -m "Release v1.0.0"
+git push origin v1.0.0
+
+# Manual deployment (requires GitHub CLI)
+gh workflow run deploy.yml -f environment=staging -f version=main
+```
+
+### Documentation
+
+- 📖 [CI/CD Documentation](docs/CICD.md) - Complete pipeline guide
+- 🔐 [Secrets Setup](. github/SECRETS_SETUP.md) - Configure GitHub secrets
+
 ## Testing
 
 This project uses `pytest` for testing the data lake components. The tests are located in the `tests/` directory.
@@ -474,6 +531,23 @@ This project uses `pytest` for testing the data lake components. The tests are l
    ```bash
    pytest tests/
    ```
+
+### Running Tests in CI
+
+Tests are automatically run in the CI pipeline on every push and pull request. You can also run them locally:
+
+```bash
+# Run all tests with coverage
+pytest tests/ --cov=. --cov-report=term -v
+
+# Run specific test file
+pytest tests/test_minio.py -v
+
+# Run integration tests (requires services running)
+docker compose up -d minio postgres
+pytest tests/test_minio.py tests/test_postgres.py -v
+docker compose down -v
+```
 
 ## License
 

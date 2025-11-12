@@ -86,14 +86,56 @@ We aim for clear, consistent code. Please run linters and tests before opening a
 Suggested steps (example):
 
 ```powershell
-# install dependencies where applicable (see README/setup)
-# run unit tests
-npm test # or the project's test command
-# run linters
-npm run lint # or the project's lint command
+# Install dependencies
+npm ci
+pip install -r requirements-test.txt
+
+# Run TypeScript build
+npm run build
+
+# Run Python tests
+pytest tests/ -v
+
+# Run integration tests (requires Docker)
+docker compose up -d minio postgres
+pytest tests/test_minio.py tests/test_postgres.py -v
+docker compose down -v
+
+# Check coverage
+pytest tests/ --cov=. --cov-report=term
 ```
 
 If a change requires new dependencies, explain why and keep them minimal.
+
+## CI/CD Pipeline
+
+This repository uses GitHub Actions for automated testing and deployment. When you create a PR:
+
+### Automated Checks
+
+1. **Code Quality**: TypeScript compilation and linting
+2. **Tests**: Python tests run on multiple versions (3.9, 3.10, 3.11)
+3. **Integration Tests**: Services start in Docker and tests run against them
+4. **Security Scan**: Trivy scans for vulnerabilities
+5. **Docker Build**: Images are built to verify Dockerfile (on main/dev branches)
+
+### What to Do When CI Fails
+
+- **Build Failures**: Run `npm run build` locally and fix TypeScript errors
+- **Test Failures**: Run `pytest tests/ -v` and fix failing tests
+- **Security Issues**: Update vulnerable dependencies with `npm audit fix` or `pip install --upgrade`
+- **Docker Issues**: Test locally with `docker compose up -d`
+
+### Viewing CI Results
+
+```powershell
+# Using GitHub CLI
+gh pr checks
+
+# Or visit the PR page on GitHub and click "Details" next to failed checks
+```
+
+For detailed CI/CD documentation, see [docs/CICD.md](docs/CICD.md).
 
 ## Review checklist (for reviewers)
 

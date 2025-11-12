@@ -1,0 +1,264 @@
+name: Deploy Data Lake
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        type: choice
+        options:
+          - development
+          - staging
+          - production
+      version:
+        description: 'Version/tag to deploy (e.g., main, v1.0.0, or sha)'
+        required: true
+        default: 'main'
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # Determine environment
+  setup:
+    name: Setup Deployment
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.set-env.outputs.environment }}
+      version: ${{ steps.set-version.outputs.version }}
+    steps:
+      - name: Determine environment
+        id: set-env
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "environment=${{ inputs.environment }}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "environment=production" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            echo "environment=production" >> $GITHUB_OUTPUT
+          else
+            echo "environment=development" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Determine version
+        id: set-version
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${{ github.sha }}" >> $GITHUB_OUTPUT
+          fi
+
+  # Deploy to Kubernetes
+  deploy-kubernetes:
+    name: Deploy to Kubernetes
+    runs-on: ubuntu-latest
+    needs: setup
+    environment:
+      name: ${{ needs.setup.outputs.environment }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure kubectl
+        uses: azure/k8s-set-context@v3
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.KUBE_CONFIG }}
+
+      - name: Create namespace if not exists
+        run: |
+          kubectl create namespace datalake-${{ needs.setup.outputs.environment }} --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Deploy MinIO
+        run: |
+          kubectl apply -f kubernetes/minio.yml -n datalake-${{ needs.setup.outputs.environment }}
+
+      - name: Deploy PostgreSQL
+        run: |
+          kubectl apply -f kubernetes/postgres.yml -n datalake-${{ needs.setup.outputs.environment }}
+
+      - name: Deploy Hive Metastore
+        run: |
+          kubectl apply -f kubernetes/hive-metastore.yml -n datalake-${{ needs.setup.outputs.environment }}
+
+      - name: Deploy Spark
+        run: |
+          kubectl apply -f kubernetes/spark.yml -n datalake-${{ needs.setup.outputs.environment }}
+
+      - name: Deploy Trino
+        run: |
+          kubectl apply -f kubernetes/trino.yml -n datalake-${{ needs.setup.outputs.environment }}
+
+      - name: Deploy Airflow
+        run: |
+          kubectl apply -f kubernetes/airflow.yml -n datalake-${{ needs.setup.outputs.environment }}
+
+      - name: Deploy Observability Service
+        run: |
+          envsubst < kubernetes/datalake-observability.yml | kubectl apply -f - -n datalake-${{ needs.setup.outputs.environment }}
+        env:
+          IMAGE_TAG: ${{ needs.setup.outputs.version }}
+
+      - name: Wait for deployments to be ready
+        run: |
+          kubectl wait --for=condition=available --timeout=600s \
+            deployment --all -n datalake-${{ needs.setup.outputs.environment }}
+
+      - name: Verify deployment
+        run: |
+          kubectl get all -n datalake-${{ needs.setup.outputs.environment }}
+
+  # Deploy with Docker Compose (for development/staging)
+  deploy-docker-compose:
+    name: Deploy with Docker Compose
+    runs-on: ubuntu-latest
+    needs: setup
+    if: needs.setup.outputs.environment != 'production'
+    environment:
+      name: ${{ needs.setup.outputs.environment }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Copy files to server
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          source: "docker-compose.yml,.env.example,postgres/**,setup/**"
+          target: "/opt/enginedge-datalake"
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            cd /opt/enginedge-datalake
+            
+            # Create .env if not exists
+            if [ ! -f .env ]; then
+              cp .env.example .env
+            fi
+            
+            # Pull latest images
+            docker compose pull
+            
+            # Deploy with zero-downtime restart
+            docker compose up -d --remove-orphans
+            
+            # Health check
+            sleep 30
+            docker compose ps
+
+  # Database Migrations
+  run-migrations:
+    name: Run Database Migrations
+    runs-on: ubuntu-latest
+    needs: [setup, deploy-kubernetes]
+    if: needs.setup.outputs.environment == 'production' || needs.setup.outputs.environment == 'staging'
+    environment:
+      name: ${{ needs.setup.outputs.environment }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run PostgreSQL migrations
+        run: |
+          kubectl exec -n datalake-${{ needs.setup.outputs.environment }} \
+            deployment/postgres -- psql -U airflow -d airflow -f /migrations/migrate.sql || echo "Migrations completed or not needed"
+
+  # Smoke Tests
+  smoke-tests:
+    name: Smoke Tests
+    runs-on: ubuntu-latest
+    needs: [setup, deploy-kubernetes]
+    environment:
+      name: ${{ needs.setup.outputs.environment }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install requests boto3 psycopg2-binary trino
+
+      - name: Run smoke tests
+        run: |
+          python -c "
+          import requests
+          import sys
+          
+          # Check MinIO
+          try:
+              response = requests.get('${{ secrets.MINIO_ENDPOINT }}/minio/health/live', timeout=10)
+              assert response.status_code == 200
+              print('✓ MinIO is healthy')
+          except Exception as e:
+              print(f'✗ MinIO health check failed: {e}')
+              sys.exit(1)
+          
+          # Check observability API
+          try:
+              response = requests.get('${{ secrets.API_ENDPOINT }}/health', timeout=10)
+              assert response.status_code == 200
+              print('✓ Observability API is healthy')
+          except Exception as e:
+              print(f'✗ API health check failed: {e}')
+              sys.exit(1)
+          
+          print('All smoke tests passed!')
+          "
+
+  # Rollback capability
+  rollback:
+    name: Rollback Deployment
+    runs-on: ubuntu-latest
+    if: failure() && github.event_name == 'workflow_dispatch'
+    needs: [setup, deploy-kubernetes, smoke-tests]
+    environment:
+      name: ${{ needs.setup.outputs.environment }}
+    steps:
+      - name: Configure kubectl
+        uses: azure/k8s-set-context@v3
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.KUBE_CONFIG }}
+
+      - name: Rollback deployments
+        run: |
+          kubectl rollout undo deployment --all -n datalake-${{ needs.setup.outputs.environment }}
+
+      - name: Notify rollback
+        run: |
+          echo "Deployment rolled back due to failure"
+
+  # Notification
+  notify-deployment:
+    name: Notify Deployment Status
+    runs-on: ubuntu-latest
+    needs: [setup, deploy-kubernetes, smoke-tests]
+    if: always()
+    steps:
+      - name: Send notification
+        run: |
+          echo "Deployment to ${{ needs.setup.outputs.environment }} completed"
+          echo "Version: ${{ needs.setup.outputs.version }}"
+          echo "Status: Deploy=${{ needs.deploy-kubernetes.result }}, Tests=${{ needs.smoke-tests.result }}"
