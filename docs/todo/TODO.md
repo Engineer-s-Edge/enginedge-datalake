@@ -9,8 +9,7 @@
 - Define PVCs/SCs for Postgres, MinIO buckets
 - Kubernetes Secrets for database creds, MinIO keys (reuse minio-secret if shared)
 
-## Networking
-- Optional Ingress for Airflow/Trino UIs (auth-protect if exposed)
+
 
 ## CI/CD
 - Add GitHub Actions deploy job: build/push images (if custom) and helm upgrade --install for datalake chart(s)
@@ -27,6 +26,17 @@
 ## In Progress
 
 ## Completed
+
+  ## Networking
+  - [x] Optional Ingress for Airflow/Trino UIs (auth-protect if exposed)
+    - Created ingress.yml with Basic Auth using htpasswd
+    - Created ingress-oauth2.yml with OAuth2 Proxy for enterprise SSO
+    - Implemented NetworkPolicies for additional security
+    - Added rate limiting and IP whitelisting support
+    - Comprehensive INGRESS_README.md with setup instructions
+    - Support for Google, GitHub, Azure AD, Okta authentication
+    - TLS/SSL configuration with cert-manager integration
+    - Security headers and timeout configurations
 
 *   [X] Add a logging solution to the repository to log the data lake components.
     - Implemented Winston-based logging solution from EnginEdge monorepo

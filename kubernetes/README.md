@@ -28,7 +28,9 @@ This will create all the necessary Deployments, Services, PersistentVolumeClaims
 
 ## Accessing Services
 
-Once deployed, you can access the services using `kubectl port-forward`:
+### Option 1: Port Forwarding (Development)
+
+You can access the services using `kubectl port-forward`:
 
 *   **MinIO:** `kubectl port-forward svc/minio 9000:9000`
 *   **PostgreSQL:** `kubectl port-forward svc/postgres 5432:5432`
@@ -42,3 +44,48 @@ Once deployed, you can access the services using `kubectl port-forward`:
 *   **Datalake Observability:** `kubectl port-forward svc/datalake-observability 3010:3010`
 
 You can then access the services in your browser at the corresponding `localhost` ports.
+
+### Option 2: Ingress with Authentication (Production)
+
+For production deployments with proper authentication and SSL/TLS, use the Ingress configuration:
+
+```bash
+# Deploy Ingress with Basic Authentication
+./kubernetes/deploy-ingress.sh --type basic
+
+# Or deploy with OAuth2 (SSO) for enterprise use
+./kubernetes/deploy-ingress.sh --type oauth2
+```
+
+**Features:**
+- 🔐 Basic Authentication or OAuth2/SSO
+- 🔒 SSL/TLS support with cert-manager
+- 🛡️ Network policies for additional security
+- ⚡ Rate limiting and IP whitelisting
+- 📊 Security headers (HSTS, X-Frame-Options, etc.)
+
+**Supported OAuth Providers:**
+- Google Workspace
+- GitHub
+- Azure Active Directory
+- Okta
+- Keycloak
+- Generic OIDC
+
+**Quick Start:**
+```bash
+# 1. Install NGINX Ingress Controller (if not already installed)
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/cloud/deploy.yaml
+
+# 2. Update /etc/hosts (for local testing)
+echo "127.0.0.1 airflow.datalake.local trino.datalake.local" | sudo tee -a /etc/hosts
+
+# 3. Deploy Ingress
+./kubernetes/deploy-ingress.sh --type basic
+
+# 4. Access UIs
+# Airflow: http://airflow.datalake.local (default: admin/airflow123)
+# Trino: http://trino.datalake.local (default: admin/trino123)
+```
+
+**Full Documentation:** See [INGRESS_README.md](INGRESS_README.md) for complete setup instructions, OAuth2 configuration, TLS setup, and troubleshooting.

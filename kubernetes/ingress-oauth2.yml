@@ -1,0 +1,282 @@
+---
+# OAuth2 Proxy for Enterprise Authentication
+# This provides SSO integration with providers like Google, GitHub, Azure AD, Okta, etc.
+#
+# To use OAuth2 Proxy instead of basic auth:
+# 1. Deploy OAuth2 Proxy
+# 2. Configure your OAuth provider
+# 3. Update ingress annotations to use oauth2-proxy
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: oauth2-proxy-config
+  namespace: default
+data:
+  oauth2_proxy.cfg: |
+    # OAuth2 Proxy Configuration
+    http_address = "0.0.0.0:4180"
+    upstreams = [
+      "file:///dev/null"
+    ]
+    
+    # Email domains that are allowed to authenticate
+    email_domains = [
+      "*"  # Change to your domain, e.g., "yourdomain.com"
+    ]
+    
+    # Cookie settings
+    cookie_name = "_oauth2_proxy"
+    cookie_secret = "CHANGE_THIS_TO_RANDOM_32_CHARS"  # Generate with: python -c 'import secrets; print(secrets.token_urlsafe(32))'
+    cookie_secure = true
+    cookie_httponly = true
+    cookie_samesite = "lax"
+    
+    # Session settings
+    cookie_expire = "168h"  # 7 days
+    cookie_refresh = "1h"
+    
+    # Provider configuration (example for Google)
+    provider = "google"
+    # Or use: github, azure, okta, keycloak, oidc, etc.
+    
+    # Redirect URL (change to your domain)
+    redirect_url = "https://auth.datalake.local/oauth2/callback"
+    
+    # Logging
+    request_logging = true
+    auth_logging = true
+    standard_logging = true
+    
+    # Skip authentication for health checks
+    skip_auth_regex = [
+      "^/ping$",
+      "^/health$"
+    ]
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: oauth2-proxy-secrets
+  namespace: default
+type: Opaque
+stringData:
+  # OAuth2 Provider Credentials
+  # Get these from your OAuth provider (Google, GitHub, Azure AD, etc.)
+  client-id: "YOUR_CLIENT_ID"
+  client-secret: "YOUR_CLIENT_SECRET"
+  cookie-secret: "CHANGE_THIS_TO_RANDOM_32_CHARS"  # Generate: python -c 'import secrets; print(secrets.token_urlsafe(32))'
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oauth2-proxy
+  namespace: default
+  labels:
+    app: oauth2-proxy
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: oauth2-proxy
+  template:
+    metadata:
+      labels:
+        app: oauth2-proxy
+    spec:
+      containers:
+        - name: oauth2-proxy
+          image: quay.io/oauth2-proxy/oauth2-proxy:v7.5.1
+          args:
+            - --config=/etc/oauth2-proxy/oauth2_proxy.cfg
+            - --client-id=$(CLIENT_ID)
+            - --client-secret=$(CLIENT_SECRET)
+            - --cookie-secret=$(COOKIE_SECRET)
+          env:
+            - name: CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: oauth2-proxy-secrets
+                  key: client-id
+            - name: CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: oauth2-proxy-secrets
+                  key: client-secret
+            - name: COOKIE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: oauth2-proxy-secrets
+                  key: cookie-secret
+          ports:
+            - containerPort: 4180
+              protocol: TCP
+              name: http
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: 4180
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: 4180
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+          volumeMounts:
+            - name: config
+              mountPath: /etc/oauth2-proxy
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: oauth2-proxy-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: oauth2-proxy
+  namespace: default
+  labels:
+    app: oauth2-proxy
+spec:
+  type: ClusterIP
+  ports:
+    - port: 4180
+      targetPort: 4180
+      protocol: TCP
+      name: http
+  selector:
+    app: oauth2-proxy
+---
+# Ingress for OAuth2 Proxy (authentication endpoint)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: oauth2-proxy-ingress
+  namespace: default
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  # tls:
+  #   - hosts:
+  #       - auth.datalake.local
+  #     secretName: oauth2-proxy-tls
+  rules:
+    - host: auth.datalake.local  # Change to your domain
+      http:
+        paths:
+          - path: /oauth2
+            pathType: Prefix
+            backend:
+              service:
+                name: oauth2-proxy
+                port:
+                  number: 4180
+---
+# Airflow Ingress with OAuth2 Proxy Authentication
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: airflow-ingress-oauth
+  namespace: default
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    
+    # OAuth2 authentication
+    nginx.ingress.kubernetes.io/auth-url: "https://auth.datalake.local/oauth2/auth"
+    nginx.ingress.kubernetes.io/auth-signin: "https://auth.datalake.local/oauth2/start?rd=$scheme://$host$request_uri"
+    nginx.ingress.kubernetes.io/auth-response-headers: "X-Auth-Request-User,X-Auth-Request-Email,X-Auth-Request-Access-Token"
+    
+    # SSL/TLS
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    
+    # Security headers
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "X-Frame-Options: DENY";
+      more_set_headers "X-Content-Type-Options: nosniff";
+      more_set_headers "X-XSS-Protection: 1; mode=block";
+      more_set_headers "Strict-Transport-Security: max-age=31536000; includeSubDomains";
+    
+    # Rate limiting
+    nginx.ingress.kubernetes.io/limit-rps: "20"
+    
+    # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  # tls:
+  #   - hosts:
+  #       - airflow.datalake.local
+  #     secretName: airflow-oauth-tls
+  rules:
+    - host: airflow.datalake.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: airflow
+                port:
+                  number: 8080
+---
+# Trino Ingress with OAuth2 Proxy Authentication
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: trino-ingress-oauth
+  namespace: default
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    
+    # OAuth2 authentication
+    nginx.ingress.kubernetes.io/auth-url: "https://auth.datalake.local/oauth2/auth"
+    nginx.ingress.kubernetes.io/auth-signin: "https://auth.datalake.local/oauth2/start?rd=$scheme://$host$request_uri"
+    nginx.ingress.kubernetes.io/auth-response-headers: "X-Auth-Request-User,X-Auth-Request-Email,X-Auth-Request-Access-Token"
+    
+    # SSL/TLS
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    
+    # Security headers
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "X-Frame-Options: DENY";
+      more_set_headers "X-Content-Type-Options: nosniff";
+      more_set_headers "X-XSS-Protection: 1; mode=block";
+      more_set_headers "Strict-Transport-Security: max-age=31536000; includeSubDomains";
+    
+    # Rate limiting
+    nginx.ingress.kubernetes.io/limit-rps: "20"
+    
+    # Trino-specific configurations
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    
+    # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  # tls:
+  #   - hosts:
+  #       - trino.datalake.local
+  #     secretName: trino-oauth-tls
+  rules:
+    - host: trino.datalake.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: trino
+                port:
+                  number: 8080
