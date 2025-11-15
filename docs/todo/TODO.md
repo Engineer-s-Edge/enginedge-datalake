@@ -9,13 +9,6 @@
 - Define PVCs/SCs for Postgres, MinIO buckets
 - Kubernetes Secrets for database creds, MinIO keys (reuse minio-secret if shared)
 
-
-
-## CI/CD
-- [x] Add GitHub Actions deploy job: build/push images (if custom)
-
-- [x] Add docker compose config validation (already present)
-
 ## Rollout Steps
 - Helm install datalake chart(s)
 - Apply ServiceMonitors and dashboards
@@ -26,7 +19,7 @@
 
 ## In Progress
 
-- [ ] helm upgrade --install for datalake chart(s)
+
 
 ## Completed
 
@@ -88,3 +81,7 @@
 - [x] Ensure API Gateway does not expose datalake UIs publicly (admin-only)
 - [x] Create observability API endpoint for datalake health/metrics monitoring
 - [x] Integrate datalake into API Gateway with role-based access control
+## CI/CD
+- [x] Add GitHub Actions deploy job: build/push images (if custom)
+- [X] helm upgrade --install for datalake chart(s)
+- [x] Add docker compose config validation (already present)
