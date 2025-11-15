@@ -1,0 +1,36 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: datalake
+nodes:
+- role: control-plane
+  kubeadmConfigPatches:
+  - |
+    kind: InitConfiguration
+    nodeRegistration:
+      kubeletExtraArgs:
+        node-labels: "ingress-ready=true"
+  extraPortMappings:
+  # MinIO API
+  - containerPort: 30900
+    hostPort: 9000
+    protocol: TCP
+  # MinIO Console
+  - containerPort: 30901
+    hostPort: 9001
+    protocol: TCP
+  # Airflow
+  - containerPort: 30082
+    hostPort: 8082
+    protocol: TCP
+  # Spark Master
+  - containerPort: 30080
+    hostPort: 8080
+    protocol: TCP
+  # Trino
+  - containerPort: 30090
+    hostPort: 8090
+    protocol: TCP
+  # Jupyter
+  - containerPort: 30888
+    hostPort: 8888
+    protocol: TCP

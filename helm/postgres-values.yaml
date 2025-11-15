@@ -1,0 +1,49 @@
+# Helm values for PostgreSQL deployment
+# Uses the Bitnami PostgreSQL Helm chart: https://github.com/bitnami/charts/tree/main/bitnami/postgresql
+
+# Authentication configuration
+auth:
+  database: "airflow"
+  username: "airflow"
+  password: "airflow"
+  postgresPassword: "postgres"
+
+# Primary instance configuration
+primary:
+  persistence:
+    enabled: true
+    size: 10Gi
+  
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+  
+  # Init scripts can be added here
+  initdb:
+    scripts:
+      init-metastore.sql: |
+        -- Create metastore database for Hive/Trino
+        CREATE DATABASE IF NOT EXISTS metastore;
+        GRANT ALL PRIVILEGES ON DATABASE metastore TO airflow;
+
+# Disable read replicas for development
+readReplicas:
+  replicaCount: 0
+
+# Metrics configuration
+metrics:
+  enabled: false
+
+# Network policies
+networkPolicy:
+  enabled: false
+
+# Service configuration
+service:
+  type: ClusterIP
+  ports:
+    postgresql: 5432
