@@ -13,7 +13,7 @@
 
 ## CI/CD
 - [x] Add GitHub Actions deploy job: build/push images (if custom)
-- [ ] helm upgrade --install for datalake chart(s)
+
 - [x] Add docker compose config validation (already present)
 
 ## Rollout Steps
@@ -25,6 +25,8 @@
 ## Todo List
 
 ## In Progress
+
+- [ ] helm upgrade --install for datalake chart(s)
 
 ## Completed
 
