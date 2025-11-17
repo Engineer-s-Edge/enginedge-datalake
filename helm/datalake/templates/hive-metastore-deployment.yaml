@@ -1,0 +1,57 @@
+{{- if .Values.hiveMetastore.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "datalake.fullname" . }}-hive-metastore
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "datalake.hive-metastore.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.hiveMetastore.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "datalake.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: hive-metastore
+  template:
+    metadata:
+      labels:
+        {{- include "datalake.hive-metastore.labels" . | nindent 8 }}
+    spec:
+      containers:
+      - name: hive-metastore
+        image: "{{ .Values.hiveMetastore.image.repository }}:{{ .Values.hiveMetastore.image.tag }}"
+        imagePullPolicy: {{ .Values.hiveMetastore.image.pullPolicy }}
+        ports:
+        - name: thrift
+          containerPort: 9083
+          protocol: TCP
+        env:
+        - name: SERVICE_NAME
+          value: "metastore"
+        - name: DB_TYPE
+          value: "postgres"
+        - name: POSTGRES_JDBC_URL
+          value: "jdbc:postgresql://postgres:5432/{{ .Values.postgres.database }}"
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "datalake.fullname" . }}-postgres-secret
+              key: user
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "datalake.fullname" . }}-postgres-secret
+              key: password
+        livenessProbe:
+          tcpSocket:
+            port: 9083
+          initialDelaySeconds: 60
+          periodSeconds: 20
+        readinessProbe:
+          tcpSocket:
+            port: 9083
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        resources:
+          {{- toYaml .Values.hiveMetastore.resources | nindent 10 }}
+{{- end }}

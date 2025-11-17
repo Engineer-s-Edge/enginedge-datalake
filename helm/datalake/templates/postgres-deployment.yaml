@@ -1,0 +1,117 @@
+{{- if .Values.postgres.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "datalake.fullname" . }}-postgres
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "datalake.postgres.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.postgres.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "datalake.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: postgres
+  template:
+    metadata:
+      labels:
+        {{- include "datalake.postgres.labels" . | nindent 8 }}
+    spec:
+      containers:
+      - name: postgres
+        image: "{{ .Values.postgres.image.repository }}:{{ .Values.postgres.image.tag }}"
+        imagePullPolicy: {{ .Values.postgres.image.pullPolicy }}
+        ports:
+        - name: postgres
+          containerPort: 5432
+          protocol: TCP
+        env:
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "datalake.fullname" . }}-postgres-secret
+              key: user
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "datalake.fullname" . }}-postgres-secret
+              key: password
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "datalake.fullname" . }}-postgres-secret
+              key: database
+        - name: TOKERN_USER_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "datalake.fullname" . }}-postgres-secret
+              key: tokern-password
+        livenessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - $(POSTGRES_USER)
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - $(POSTGRES_USER)
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        resources:
+          {{- toYaml .Values.postgres.resources | nindent 10 }}
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/postgresql/data
+        - name: init-scripts
+          mountPath: /docker-entrypoint-initdb.d
+      {{- if .Values.postgres.metrics.enabled }}
+      - name: postgres-exporter
+        image: {{ .Values.postgres.metrics.exporter.image }}
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: metrics
+          containerPort: 9187
+          protocol: TCP
+        env:
+        - name: DATA_SOURCE_NAME
+          value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@localhost:5432/$(POSTGRES_DB)?sslmode=disable"
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "datalake.fullname" . }}-postgres-secret
+              key: user
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "datalake.fullname" . }}-postgres-secret
+              key: password
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "datalake.fullname" . }}-postgres-secret
+              key: database
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+      {{- end }}
+      volumes:
+      - name: data
+        {{- if .Values.postgres.persistence.enabled }}
+        persistentVolumeClaim:
+          claimName: {{ include "datalake.fullname" . }}-postgres-pvc
+        {{- else }}
+        emptyDir: {}
+        {{- end }}
+      - name: init-scripts
+        configMap:
+          name: {{ include "datalake.fullname" . }}-postgres-init
+{{- end }}

@@ -1,0 +1,25 @@
+{{- if .Values.postgres.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "datalake.postgres.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.postgres.service.type }}
+  ports:
+  - name: postgres
+    port: {{ .Values.postgres.service.port }}
+    targetPort: 5432
+    protocol: TCP
+  {{- if .Values.postgres.metrics.enabled }}
+  - name: metrics
+    port: 9187
+    targetPort: 9187
+    protocol: TCP
+  {{- end }}
+  selector:
+    {{- include "datalake.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: postgres
+{{- end }}

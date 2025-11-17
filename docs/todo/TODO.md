@@ -15,11 +15,23 @@
 ## In Progress
 
 ## K8s Manifests / Helm
-- Create Helm chart(s) or manifests for core services (Trino, Spark, Airflow, Postgres, MinIO) matching compose config
 - Add Services with labels (app: enginedge, component: <svc>) and expose health/metrics where available
 - Add values files for local cluster (storage classes / PVs)
 
 ## Completed
+
+  ## K8s Manifests / Helm
+  - [x] Create Helm chart(s) or manifests for core services (Trino, Spark, Airflow, Postgres, MinIO) matching compose config
+    - Created comprehensive Helm chart in helm/datalake/
+    - Includes all core services: MinIO, PostgreSQL, Hive Metastore, Trino, Spark, Airflow
+    - Complete with deployments, services, configmaps, secrets, and PVCs
+    - Configurable values.yaml with sensible defaults
+    - Environment-specific values files (values-dev.yaml, values-prod.yaml)
+    - Deployment script (deploy.ps1) for easy installation
+    - ServiceMonitor templates for Prometheus integration
+    - Comprehensive README.md with usage examples
+    - All services labeled with app: enginedge and component-specific labels
+    - Health checks and metrics endpoints configured where supported
 
   ## Networking
   - [x] Optional Ingress for Airflow/Trino UIs (auth-protect if exposed)

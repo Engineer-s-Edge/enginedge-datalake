@@ -1,0 +1,112 @@
+# Development Environment Values
+# Minimal resources for local development
+
+global:
+  namespace: datalake-dev
+  labels:
+    environment: development
+
+# Reduce replicas for dev
+minio:
+  replicaCount: 1
+  persistence:
+    enabled: false  # Use emptyDir for faster teardown
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+postgres:
+  replicaCount: 1
+  persistence:
+    enabled: false
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+  metrics:
+    enabled: false
+
+trino:
+  replicaCount: 1
+  resources:
+    requests:
+      memory: "1Gi"
+      cpu: "250m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+  config:
+    maxMemory: 1GB
+    maxMemoryPerNode: 512MB
+
+spark:
+  master:
+    replicaCount: 1
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+      limits:
+        memory: "1Gi"
+        cpu: "500m"
+  worker:
+    replicaCount: 1
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+      limits:
+        memory: "1Gi"
+        cpu: "500m"
+  metrics:
+    enabled: false
+
+airflow:
+  replicaCount: 1
+  persistence:
+    logs:
+      enabled: false
+    plugins:
+      enabled: false
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+
+hiveMetastore:
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+# Disable optional components for dev
+jupyter:
+  enabled: false
+
+greatExpectations:
+  enabled: false
+
+tokern:
+  enabled: false
+
+marquez:
+  enabled: false
+
+observability:
+  enabled: false
+
+serviceMonitor:
+  enabled: false

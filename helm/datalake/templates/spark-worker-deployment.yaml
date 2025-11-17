@@ -1,0 +1,61 @@
+{{- if .Values.spark.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "datalake.fullname" . }}-spark-worker
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "datalake.spark-worker.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.spark.worker.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "datalake.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: spark-worker
+  template:
+    metadata:
+      labels:
+        {{- include "datalake.spark-worker.labels" . | nindent 8 }}
+    spec:
+      containers:
+      - name: spark-worker
+        image: "{{ .Values.spark.worker.image.repository }}:{{ .Values.spark.worker.image.tag }}"
+        imagePullPolicy: {{ .Values.spark.worker.image.pullPolicy }}
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          apt-get update && apt-get install -y curl &&
+          cd /opt/spark/jars &&
+          {{- if .Values.spark.openlineage.enabled }}
+          curl -O https://repo1.maven.org/maven2/io/openlineage/openlineage-spark_2.12/{{ .Values.spark.openlineage.version }}/openlineage-spark_2.12-{{ .Values.spark.openlineage.version }}.jar &&
+          chown -R spark:spark /opt/spark/jars &&
+          {{- end }}
+          su spark -c '/opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://{{ include "datalake.fullname" . }}-spark-master:7077'
+        ports:
+        - name: web
+          containerPort: 8081
+          protocol: TCP
+        env:
+        - name: SPARK_MASTER
+          value: "spark://{{ include "datalake.fullname" . }}-spark-master:7077"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8081
+          initialDelaySeconds: 60
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8081
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        resources:
+          {{- toYaml .Values.spark.worker.resources | nindent 10 }}
+        volumeMounts:
+        - name: spark-apps
+          mountPath: /opt/spark-apps
+      volumes:
+      - name: spark-apps
+        emptyDir: {}
+{{- end }}

@@ -1,0 +1,114 @@
+{{- if .Values.airflow.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "datalake.fullname" . }}-airflow
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "datalake.airflow.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.airflow.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "datalake.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: airflow
+  template:
+    metadata:
+      labels:
+        {{- include "datalake.airflow.labels" . | nindent 8 }}
+    spec:
+      initContainers:
+      - name: wait-for-postgres
+        image: busybox:1.28
+        command: ['sh', '-c', 'until nc -z postgres 5432; do echo waiting for postgres; sleep 2; done;']
+      containers:
+      - name: airflow
+        image: "{{ .Values.airflow.image.repository }}:{{ .Values.airflow.image.tag }}"
+        imagePullPolicy: {{ .Values.airflow.image.pullPolicy }}
+        ports:
+        - name: web
+          containerPort: 8080
+          protocol: TCP
+        env:
+        - name: AIRFLOW__CORE__EXECUTOR
+          value: {{ .Values.airflow.executor }}
+        - name: AIRFLOW__DATABASE__SQL_ALCHEMY_CONN
+          value: "postgresql+psycopg2://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres:5432/$(POSTGRES_DB)"
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "datalake.fullname" . }}-postgres-secret
+              key: user
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "datalake.fullname" . }}-postgres-secret
+              key: password
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "datalake.fullname" . }}-postgres-secret
+              key: database
+        - name: AIRFLOW_UID
+          value: "50000"
+        - name: AIRFLOW_GID
+          value: "0"
+        - name: _AIRFLOW_DB_UPGRADE
+          value: "true"
+        - name: _AIRFLOW_WWW_USER_CREATE
+          value: "true"
+        - name: _AIRFLOW_WWW_USER_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "datalake.fullname" . }}-airflow-secret
+              key: webserver-user
+        - name: _AIRFLOW_WWW_USER_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "datalake.fullname" . }}-airflow-secret
+              key: webserver-password
+        {{- if .Values.airflow.openlineage.enabled }}
+        - name: AIRFLOW__OPENLINEAGE__TRANSPORT
+          value: '{"type": "http", "url": "http://{{ include "datalake.fullname" . }}-marquez-api:5000"}'
+        {{- end }}
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 120
+          periodSeconds: 30
+          timeoutSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+        resources:
+          {{- toYaml .Values.airflow.resources | nindent 10 }}
+        volumeMounts:
+        - name: dags
+          mountPath: /opt/airflow/dags
+        - name: logs
+          mountPath: /opt/airflow/logs
+        - name: plugins
+          mountPath: /opt/airflow/plugins
+      volumes:
+      - name: dags
+        emptyDir: {}
+      - name: logs
+        {{- if .Values.airflow.persistence.logs.enabled }}
+        persistentVolumeClaim:
+          claimName: {{ include "datalake.fullname" . }}-airflow-logs-pvc
+        {{- else }}
+        emptyDir: {}
+        {{- end }}
+      - name: plugins
+        {{- if .Values.airflow.persistence.plugins.enabled }}
+        persistentVolumeClaim:
+          claimName: {{ include "datalake.fullname" . }}-airflow-plugins-pvc
+        {{- else }}
+        emptyDir: {}
+        {{- end }}
+{{- end }}

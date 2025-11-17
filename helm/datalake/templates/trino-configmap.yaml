@@ -1,0 +1,33 @@
+{{- if .Values.trino.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "datalake.fullname" . }}-trino-config
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "datalake.trino.labels" . | nindent 4 }}
+data:
+  config.properties: |
+    coordinator={{ .Values.trino.config.coordinator }}
+    node-scheduler.include-coordinator={{ .Values.trino.config.includeCoordinator }}
+    http-server.http.port=8080
+    query.max-memory={{ .Values.trino.config.maxMemory }}
+    query.max-memory-per-node={{ .Values.trino.config.maxMemoryPerNode }}
+    discovery-server.enabled=true
+    discovery.uri=http://localhost:8080
+    
+  node.properties: |
+    node.environment=production
+    node.id={{ include "datalake.fullname" . }}-trino
+    node.data-dir=/data/trino
+    
+  jvm.config: |
+    -server
+    -Xmx2G
+    -XX:+UseG1GC
+    -XX:G1HeapRegionSize=32M
+    -XX:+UseGCOverheadLimit
+    -XX:+ExplicitGCInvokesConcurrent
+    -XX:+HeapDumpOnOutOfMemoryError
+    -XX:+ExitOnOutOfMemoryError
+{{- end }}

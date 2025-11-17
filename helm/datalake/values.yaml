@@ -1,0 +1,382 @@
+# Default values for datalake
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+global:
+  namespace: datalake
+  labels:
+    app: enginedge
+    environment: development
+
+# MinIO Configuration
+minio:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: minio/minio
+    tag: RELEASE.2023-09-07T02-05-02Z
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 9000
+    consolePort: 9001
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+  persistence:
+    enabled: true
+    storageClass: ""
+    size: 10Gi
+  rootUser: minioadmin
+  rootPassword: minioadmin123
+  metrics:
+    enabled: true
+    path: /minio/v2/metrics/cluster
+
+# PostgreSQL Configuration
+postgres:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: postgres
+    tag: "14"
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 5432
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "1000m"
+  persistence:
+    enabled: true
+    storageClass: ""
+    size: 5Gi
+  user: airflow
+  password: airflow
+  database: airflow
+  tokernUserPassword: admin123
+  metrics:
+    enabled: true
+    exporter:
+      image: prometheuscommunity/postgres-exporter:v0.11.1
+
+# Hive Metastore Configuration
+hiveMetastore:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: sslhep/hive-metastore
+    tag: "3.1.3"
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 9083
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+
+# Trino Configuration
+trino:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: trinodb/trino
+    tag: "418"
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 8080
+  resources:
+    requests:
+      memory: "2Gi"
+      cpu: "500m"
+    limits:
+      memory: "4Gi"
+      cpu: "2000m"
+  config:
+    coordinator: true
+    includeCoordinator: true
+    maxMemory: 2GB
+    maxMemoryPerNode: 1GB
+  metrics:
+    enabled: true
+    path: /v1/metrics
+
+# Spark Configuration
+spark:
+  enabled: true
+  master:
+    replicaCount: 1
+    image:
+      repository: bde2020/spark-master
+      tag: "3.3.0-hadoop3.3"
+      pullPolicy: IfNotPresent
+    service:
+      type: ClusterIP
+      webPort: 8080
+      masterPort: 7077
+    resources:
+      requests:
+        memory: "1Gi"
+        cpu: "500m"
+      limits:
+        memory: "2Gi"
+        cpu: "1000m"
+  worker:
+    replicaCount: 2
+    image:
+      repository: bde2020/spark-worker
+      tag: "3.3.0-hadoop3.3"
+      pullPolicy: IfNotPresent
+    service:
+      type: ClusterIP
+      webPort: 8081
+    resources:
+      requests:
+        memory: "1Gi"
+        cpu: "500m"
+      limits:
+        memory: "2Gi"
+        cpu: "1000m"
+  openlineage:
+    enabled: true
+    version: "1.39.0"
+    namespace: datalake
+  metrics:
+    enabled: true
+    jmxExporter:
+      image: bitnami/jmx-exporter:0.17.2
+
+# Airflow Configuration
+airflow:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: apache/airflow
+    tag: "2.6.3"
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 8080
+  resources:
+    requests:
+      memory: "1Gi"
+      cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+  persistence:
+    logs:
+      enabled: true
+      storageClass: ""
+      size: 5Gi
+    plugins:
+      enabled: true
+      storageClass: ""
+      size: 1Gi
+  executor: LocalExecutor
+  webserverUser: admin
+  webserverPassword: admin123
+  openlineage:
+    enabled: true
+  metrics:
+    enabled: true
+    path: /health
+
+# Marquez Configuration (Data Lineage)
+marquez:
+  enabled: true
+  api:
+    replicaCount: 1
+    image:
+      repository: marquezproject/marquez
+      tag: "0.51.1"
+      pullPolicy: IfNotPresent
+    service:
+      type: ClusterIP
+      port: 5000
+      adminPort: 5001
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+      limits:
+        memory: "1Gi"
+        cpu: "1000m"
+  web:
+    replicaCount: 1
+    image:
+      repository: marquezproject/marquez-web
+      tag: "0.51.1"
+      pullPolicy: IfNotPresent
+    service:
+      type: ClusterIP
+      port: 3000
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "250m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+  db:
+    user: marquez
+    password: marquez
+    database: marquez
+    persistence:
+      enabled: true
+      storageClass: ""
+      size: 5Gi
+
+# Jupyter Configuration
+jupyter:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: jupyter/pyspark-notebook
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 8888
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+  token: jupyter123
+  persistence:
+    enabled: true
+    storageClass: ""
+    size: 5Gi
+
+# Great Expectations Configuration
+greatExpectations:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: powerdatahub/great-expectations-docker
+    tag: "0.8.7"
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 8000
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+  persistence:
+    enabled: true
+    storageClass: ""
+    size: 1Gi
+
+# Tokern Configuration (Data Governance)
+tokern:
+  enabled: true
+  api:
+    replicaCount: 1
+    image:
+      repository: tokern/data-lineage
+      tag: latest
+      pullPolicy: IfNotPresent
+    service:
+      type: ClusterIP
+      port: 4142
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "250m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+  viz:
+    replicaCount: 1
+    image:
+      repository: tokern/data-lineage-viz
+      tag: latest
+      pullPolicy: IfNotPresent
+    service:
+      type: ClusterIP
+      port: 80
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "100m"
+      limits:
+        memory: "256Mi"
+        cpu: "250m"
+  redis:
+    image:
+      repository: redis
+      tag: 6.2.6-alpine
+      pullPolicy: IfNotPresent
+    service:
+      port: 6379
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "100m"
+      limits:
+        memory: "256Mi"
+        cpu: "250m"
+
+# Observability API Configuration
+observability:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: enginedge/datalake-observability
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 3010
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+# Ingress Configuration
+ingress:
+  enabled: false
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: datalake.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+          service: trino
+  tls:
+    - secretName: datalake-tls
+      hosts:
+        - datalake.example.com
+
+# ServiceMonitor Configuration (Prometheus Operator)
+serviceMonitor:
+  enabled: false
+  interval: 30s
+  scrapeTimeout: 10s
+  labels:
+    prometheus: kube-prometheus

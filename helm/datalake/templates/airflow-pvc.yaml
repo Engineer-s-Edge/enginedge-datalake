@@ -1,0 +1,39 @@
+{{- if .Values.airflow.enabled }}
+{{- if .Values.airflow.persistence.logs.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "datalake.fullname" . }}-airflow-logs-pvc
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "datalake.airflow.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  {{- if .Values.airflow.persistence.logs.storageClass }}
+  storageClassName: {{ .Values.airflow.persistence.logs.storageClass }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.airflow.persistence.logs.size }}
+{{- end }}
+---
+{{- if .Values.airflow.persistence.plugins.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "datalake.fullname" . }}-airflow-plugins-pvc
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "datalake.airflow.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  {{- if .Values.airflow.persistence.plugins.storageClass }}
+  storageClassName: {{ .Values.airflow.persistence.plugins.storageClass }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.airflow.persistence.plugins.size }}
+{{- end }}
+{{- end }}
