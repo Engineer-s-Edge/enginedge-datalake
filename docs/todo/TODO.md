@@ -1,10 +1,5 @@
 # Datalake TODO (K8s, Observability, CI/CD)
 
-## K8s Manifests / Helm
-- Create Helm chart(s) or manifests for core services (Trino, Spark, Airflow, Postgres, MinIO) matching compose config
-- Add Services with labels (app: enginedge, component: <svc>) and expose health/metrics where available
-- Add values files for local cluster (storage classes / PVs)
-
 ## Storage & Secrets
 - Define PVCs/SCs for Postgres, MinIO buckets
 - Kubernetes Secrets for database creds, MinIO keys (reuse minio-secret if shared)
@@ -19,7 +14,10 @@
 
 ## In Progress
 
-
+## K8s Manifests / Helm
+- Create Helm chart(s) or manifests for core services (Trino, Spark, Airflow, Postgres, MinIO) matching compose config
+- Add Services with labels (app: enginedge, component: <svc>) and expose health/metrics where available
+- Add values files for local cluster (storage classes / PVs)
 
 ## Completed
 
