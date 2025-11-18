@@ -6,6 +6,8 @@ metadata:
   namespace: {{ .Values.global.namespace }}
   labels:
     {{- include "datalake.hive-metastore.labels" . | nindent 4 }}
+    app: enginedge
+    component: hive-metastore
 spec:
   type: {{ .Values.hiveMetastore.service.type }}
   ports:

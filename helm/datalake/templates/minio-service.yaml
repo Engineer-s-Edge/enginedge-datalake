@@ -6,6 +6,8 @@ metadata:
   namespace: {{ .Values.global.namespace }}
   labels:
     {{- include "datalake.minio.labels" . | nindent 4 }}
+    app: enginedge
+    component: minio
 spec:
   type: {{ .Values.minio.service.type }}
   ports:
@@ -17,6 +19,12 @@ spec:
     port: {{ .Values.minio.service.consolePort }}
     targetPort: 9001
     protocol: TCP
+  {{- if .Values.minio.metrics.enabled }}
+  - name: metrics
+    port: 9000
+    targetPort: 9000
+    protocol: TCP
+  {{- end }}
   selector:
     {{- include "datalake.selectorLabels" . | nindent 4 }}
     app.kubernetes.io/component: minio

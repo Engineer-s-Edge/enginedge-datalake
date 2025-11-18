@@ -6,6 +6,8 @@ metadata:
   namespace: {{ .Values.global.namespace }}
   labels:
     {{- include "datalake.postgres.labels" . | nindent 4 }}
+    app: enginedge
+    component: postgres
 spec:
   type: {{ .Values.postgres.service.type }}
   ports:

@@ -15,12 +15,19 @@
 ## In Progress
 
 ## K8s Manifests / Helm
-- Add Services with labels (app: enginedge, component: <svc>) and expose health/metrics where available
 - Add values files for local cluster (storage classes / PVs)
 
 ## Completed
 
   ## K8s Manifests / Helm
+  - [x] Add Services with labels (app: enginedge, component: <svc>) and expose health/metrics where available
+    - Updated all service manifests with explicit `app: enginedge` and `component: <service-name>` labels
+    - Exposed metrics endpoints for MinIO (/minio/v2/metrics/cluster on port 9000)
+    - Exposed metrics endpoints for Trino (/v1/metrics on port 8080)
+    - Exposed health endpoints for Airflow (/health on port 8080)
+    - Exposed metrics endpoints for Spark Master and Worker (JMX exporter on port 9090)
+    - PostgreSQL metrics already configured with postgres_exporter on port 9187
+    - All services now have consistent labeling for Prometheus ServiceMonitor discovery
   - [x] Create Helm chart(s) or manifests for core services (Trino, Spark, Airflow, Postgres, MinIO) matching compose config
     - Created comprehensive Helm chart in helm/datalake/
     - Includes all core services: MinIO, PostgreSQL, Hive Metastore, Trino, Spark, Airflow
