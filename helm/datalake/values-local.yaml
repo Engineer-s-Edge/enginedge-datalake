@@ -1,0 +1,241 @@
+# Local Cluster Values
+# Optimized for local Kubernetes clusters (kind, k3d, Docker Desktop, Minikube)
+# Reduced resources, local storage classes, and development-friendly settings
+
+global:
+  namespace: datalake
+  labels:
+    app: enginedge
+    environment: local
+
+# MinIO Configuration - Local storage
+minio:
+  enabled: true
+  replicaCount: 1
+  persistence:
+    enabled: true
+    # Use default storage class for local clusters
+    # kind/k3d: local-path (default)
+    # Docker Desktop: hostpath (default)
+    # Minikube: standard (default)
+    storageClass: ""  # Empty string uses default StorageClass
+    size: 5Gi  # Smaller size for local development
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+  metrics:
+    enabled: true
+
+# PostgreSQL Configuration - Local storage
+postgres:
+  enabled: true
+  replicaCount: 1
+  persistence:
+    enabled: true
+    storageClass: ""  # Uses default StorageClass
+    size: 2Gi  # Smaller for local
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+  metrics:
+    enabled: true
+
+# Hive Metastore Configuration
+hiveMetastore:
+  enabled: true
+  replicaCount: 1
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+# Trino Configuration - Reduced resources
+trino:
+  enabled: true
+  replicaCount: 1
+  resources:
+    requests:
+      memory: "1Gi"
+      cpu: "250m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+  config:
+    coordinator: true
+    includeCoordinator: true
+    maxMemory: 1GB
+    maxMemoryPerNode: 512MB
+  metrics:
+    enabled: true
+
+# Spark Configuration - Single worker for local
+spark:
+  enabled: true
+  master:
+    replicaCount: 1
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+      limits:
+        memory: "1Gi"
+        cpu: "500m"
+  worker:
+    replicaCount: 1  # Single worker for local
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+      limits:
+        memory: "1Gi"
+        cpu: "500m"
+  metrics:
+    enabled: true
+
+# Airflow Configuration - Local storage
+airflow:
+  enabled: true
+  replicaCount: 1
+  persistence:
+    logs:
+      enabled: true
+      storageClass: ""  # Uses default StorageClass
+      size: 2Gi
+    plugins:
+      enabled: true
+      storageClass: ""  # Uses default StorageClass
+      size: 500Mi
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+  executor: LocalExecutor
+  metrics:
+    enabled: true
+
+# Marquez Configuration (Data Lineage) - Local storage
+marquez:
+  enabled: true
+  api:
+    replicaCount: 1
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+  web:
+    replicaCount: 1
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "100m"
+      limits:
+        memory: "256Mi"
+        cpu: "250m"
+  db:
+    persistence:
+      enabled: true
+      storageClass: ""  # Uses default StorageClass
+      size: 2Gi
+
+# Jupyter Configuration - Local storage
+jupyter:
+  enabled: true
+  replicaCount: 1
+  persistence:
+    enabled: true
+    storageClass: ""  # Uses default StorageClass
+    size: 2Gi
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+
+# Great Expectations Configuration - Local storage
+greatExpectations:
+  enabled: true
+  replicaCount: 1
+  persistence:
+    enabled: true
+    storageClass: ""  # Uses default StorageClass
+    size: 500Mi
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "250m"
+
+# Tokern Configuration (Data Governance) - Minimal resources
+tokern:
+  enabled: true
+  api:
+    replicaCount: 1
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "100m"
+      limits:
+        memory: "256Mi"
+        cpu: "250m"
+  viz:
+    replicaCount: 1
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "50m"
+      limits:
+        memory: "128Mi"
+        cpu: "100m"
+  redis:
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "50m"
+      limits:
+        memory: "128Mi"
+        cpu: "100m"
+
+# Observability API Configuration
+observability:
+  enabled: true
+  replicaCount: 1
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "250m"
+
+# Ingress Configuration - NodePort for local access
+ingress:
+  enabled: false  # Disable ingress for local, use port-forward or NodePort instead
+
+# ServiceMonitor Configuration
+serviceMonitor:
+  enabled: true  # Enable for local Prometheus if available
+  interval: 30s
+  scrapeTimeout: 10s
+  labels:
+    prometheus: kube-prometheus

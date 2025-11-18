@@ -1,0 +1,76 @@
+# Local Cluster Storage Classes
+# These StorageClasses are for local Kubernetes clusters that may need specific configurations
+# Apply these if your cluster doesn't have a default StorageClass or needs custom settings
+
+---
+# For kind clusters - local-path provisioner (usually pre-installed)
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: local-path
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+provisioner: rancher.io/local-path
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Delete
+allowVolumeExpansion: true
+
+---
+# For k3d clusters - local-path provisioner (usually pre-installed)
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: local-path-k3d
+provisioner: rancher.io/local-path
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Delete
+allowVolumeExpansion: true
+
+---
+# For Docker Desktop - hostpath provisioner (usually pre-installed)
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: hostpath
+provisioner: docker.io/hostpath
+volumeBindingMode: Immediate
+reclaimPolicy: Delete
+allowVolumeExpansion: false
+
+---
+# For Minikube - standard provisioner (usually pre-installed)
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: standard
+provisioner: k8s.io/minikube-hostpath
+volumeBindingMode: Immediate
+reclaimPolicy: Delete
+allowVolumeExpansion: false
+
+---
+# Generic local-storage StorageClass for manual PV provisioning
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: local-storage
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Delete
+allowVolumeExpansion: false
+
+---
+# Fast SSD StorageClass (for production-like testing)
+# Note: This is a template - adjust provisioner based on your infrastructure
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: fast-ssd
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "false"
+provisioner: rancher.io/local-path  # Change to your provisioner
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Retain
+allowVolumeExpansion: true
+parameters:
+  type: pd-ssd  # GCP example, adjust for your provider

@@ -8,6 +8,12 @@ A comprehensive Helm chart for deploying the EnginEdge Data Lake infrastructure 
 - Helm 3.2.0+
 - PV provisioner support in the underlying infrastructure (for persistent storage)
 
+## Quick Links
+
+- **[Local Deployment Guide](LOCAL_DEPLOYMENT.md)** - Deploy on kind, k3d, Docker Desktop, or Minikube
+- **[Quickstart](QUICKSTART.md)** - Get started quickly
+- **[Implementation Summary](IMPLEMENTATION_SUMMARY.md)** - Architecture and design details
+
 ## Components
 
 This Helm chart deploys the following components:
@@ -25,6 +31,38 @@ This Helm chart deploys the following components:
 
 ## Installation
 
+### Local Cluster (kind, k3d, Docker Desktop, Minikube)
+
+For local development, use the provided PowerShell script:
+
+```powershell
+# Quick install with default local settings
+.\deploy-local.ps1
+
+# Minimal installation (core services only)
+.\deploy-local.ps1 -Minimal
+
+# Without persistence (ephemeral)
+.\deploy-local.ps1 -NoPersistence
+
+# Or manually with Helm
+helm install datalake . -n datalake --values values-local.yaml --create-namespace
+```
+
+See **[LOCAL_DEPLOYMENT.md](LOCAL_DEPLOYMENT.md)** for detailed instructions.
+
+### Development Environment
+
+```bash
+helm install datalake . -n datalake-dev --values values-dev.yaml --create-namespace
+```
+
+### Production Environment
+
+```bash
+helm install datalake . -n datalake-prod --values values-prod.yaml --create-namespace
+```
+
 ### Install from local chart
 
 ```bash
@@ -32,10 +70,10 @@ This Helm chart deploys the following components:
 kubectl create namespace datalake
 
 # Install the chart
-helm install datalake ./datalake -n datalake
+helm install datalake . -n datalake
 
 # Or install with custom values
-helm install datalake ./datalake -n datalake -f custom-values.yaml
+helm install datalake . -n datalake -f custom-values.yaml
 ```
 
 ### Upgrade an existing release

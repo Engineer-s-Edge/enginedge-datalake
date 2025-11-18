@@ -15,9 +15,24 @@
 ## In Progress
 
 ## K8s Manifests / Helm
-- Add values files for local cluster (storage classes / PVs)
 
 ## Completed
+
+  - [x] Add values files for local cluster (storage classes / PVs)
+    - Created values-local.yaml optimized for local Kubernetes clusters (kind, k3d, Docker Desktop, Minikube)
+    - Reduced resource allocations suitable for local development (256Mi-1Gi memory, 100m-500m CPU)
+    - Configured to use default StorageClass (empty string) for automatic detection
+    - Smaller PVC sizes (2-5Gi) appropriate for local development
+    - Single replica configuration for all services to minimize resource usage
+    - Created storageclass-local.yaml with StorageClass definitions for various local cluster types
+    - Created LOCAL_DEPLOYMENT.md comprehensive guide for local cluster deployment
+    - Created deploy-local.ps1 PowerShell script for automated local deployment with options:
+      - Environment selection (local, dev, prod)
+      - Minimal installation mode (core services only)
+      - Disable persistence option for ephemeral testing
+      - Automatic StorageClass detection and creation
+      - Pod readiness monitoring
+      - Detailed access information for all services
 
   ## K8s Manifests / Helm
   - [x] Add Services with labels (app: enginedge, component: <svc>) and expose health/metrics where available
