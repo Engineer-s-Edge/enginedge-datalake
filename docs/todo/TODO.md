@@ -14,8 +14,6 @@
 
 ## In Progress
 
-## K8s Manifests / Helm
-
 ## Completed
 
   - [x] Add values files for local cluster (storage classes / PVs)
