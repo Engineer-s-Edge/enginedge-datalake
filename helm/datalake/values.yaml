@@ -8,6 +8,50 @@ global:
     app: enginedge
     environment: development
 
+# StorageClass Configuration
+# Set enabled: true to create custom StorageClasses
+# Otherwise, use existing cluster StorageClasses
+storageClass:
+  enabled: false  # Set to true to create custom StorageClasses
+  standard:
+    name: datalake-standard
+    provisioner: kubernetes.io/no-provisioner  # Change to your provisioner
+    volumeBindingMode: WaitForFirstConsumer
+    reclaimPolicy: Delete
+    allowVolumeExpansion: true
+    isDefault: false
+    parameters: {}
+      # type: pd-standard  # GCP example
+      # fsType: ext4
+  fast:
+    enabled: true
+    name: datalake-fast
+    provisioner: kubernetes.io/no-provisioner  # Change to your provisioner
+    volumeBindingMode: WaitForFirstConsumer
+    reclaimPolicy: Retain
+    allowVolumeExpansion: true
+    parameters: {}
+      # type: pd-ssd  # GCP example
+      # fsType: ext4
+  bulk:
+    enabled: true
+    name: datalake-bulk
+    provisioner: kubernetes.io/no-provisioner  # Change to your provisioner
+    volumeBindingMode: WaitForFirstConsumer
+    reclaimPolicy: Delete
+    allowVolumeExpansion: true
+    parameters: {}
+      # type: pd-standard  # GCP example
+  shared:
+    enabled: false
+    name: datalake-shared
+    provisioner: kubernetes.io/no-provisioner  # Change to NFS provisioner
+    volumeBindingMode: Immediate
+    reclaimPolicy: Retain
+    allowVolumeExpansion: true
+    parameters: {}
+      # type: nfs
+
 # MinIO Configuration
 minio:
   enabled: true
@@ -29,8 +73,22 @@ minio:
       cpu: "1000m"
   persistence:
     enabled: true
-    storageClass: ""
+    storageClass: ""  # Use empty string for default, or specify: datalake-bulk
     size: 10Gi
+    accessModes:
+      - ReadWriteOnce
+    annotations: {}
+    selector: {}
+    backupPolicy: incremental
+  lakehouse:
+    enabled: false  # Set to true for separate lakehouse storage
+    persistence:
+      enabled: true
+      storageClass: ""
+      size: 100Gi
+      accessModes:
+        - ReadWriteOnce
+      annotations: {}
   rootUser: minioadmin
   rootPassword: minioadmin123
   metrics:
@@ -57,8 +115,13 @@ postgres:
       cpu: "1000m"
   persistence:
     enabled: true
-    storageClass: ""
+    storageClass: ""  # Use empty string for default, or specify: datalake-fast
     size: 5Gi
+    accessModes:
+      - ReadWriteOnce
+    annotations: {}
+    selector: {}
+    backupPolicy: daily
   user: airflow
   password: airflow
   database: airflow
@@ -180,12 +243,18 @@ airflow:
   persistence:
     logs:
       enabled: true
-      storageClass: ""
+      storageClass: ""  # Use empty string for default, or specify: datalake-standard
       size: 5Gi
+      accessModes:
+        - ReadWriteOnce
+      annotations: {}
     plugins:
       enabled: true
       storageClass: ""
       size: 1Gi
+      accessModes:
+        - ReadWriteOnce
+      annotations: {}
   executor: LocalExecutor
   webserverUser: admin
   webserverPassword: admin123

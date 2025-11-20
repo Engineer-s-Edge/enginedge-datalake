@@ -2,24 +2,76 @@
 
 This directory contains the Kubernetes manifests for deploying the EnginEdge Data Lake.
 
+## Quick Links
+
+- 📚 **[Complete Storage & Secrets Guide](../docs/STORAGE_AND_SECRETS.md)** - Comprehensive documentation
+- 🔐 **[secrets.yml.example](secrets.yml.example)** - Secret template with all credentials
+- 💾 **[storageclass.yml](storageclass.yml)** - StorageClass definitions for different environments
+- 📦 **[pvcs.yml](pvcs.yml)** - PersistentVolumeClaims for all services
+
 ## Deployment
 
-### 1. Create Secrets
+### 1. Configure StorageClasses
 
-First, create a `secrets.yml` file from the example:
+Apply the appropriate StorageClasses for your environment:
 
 ```bash
-cp kubernetes/secrets.yml.example kubernetes/secrets.yml
+# Apply all StorageClasses
+kubectl apply -f kubernetes/storageclass.yml
+
+# Or edit to match your cloud provider first
+nano kubernetes/storageclass.yml
 ```
 
-Then, **review and update the `kubernetes/secrets.yml` file** with your own credentials. This file is ignored by git, so your secrets will not be committed to the repository.
+See [Cloud Provider Examples](../docs/STORAGE_AND_SECRETS.md#cloud-provider-examples) for AWS, GCP, Azure configurations.
 
-### 2. Deploy the Data Lake
+### 2. Create Persistent Volume Claims
 
-To deploy the data lake to your Kubernetes cluster, apply the manifests in this directory:
+Apply PVCs for PostgreSQL, MinIO, and Airflow:
 
 ```bash
+# Review and adjust sizes if needed
+kubectl apply -f kubernetes/pvcs.yml
+
+# Verify PVCs are bound
+kubectl get pvc -n datalake
+```
+
+### 3. Create Secrets
+
+Create secrets from the example template:
+
+```bash
+# Copy the template
+cp kubernetes/secrets.yml.example kubernetes/secrets.yml
+
+# IMPORTANT: Edit with your actual credentials
+nano kubernetes/secrets.yml
+
+# Apply secrets
+kubectl apply -f kubernetes/secrets.yml
+```
+
+⚠️ **Security Note**: Never commit `secrets.yml` to version control. Use strong, unique passwords for production.
+
+### 4. Deploy Services
+
+Deploy all data lake services:
+
+```bash
+# Create namespace
+kubectl create namespace datalake
+
+# Deploy all services
 kubectl apply -f kubernetes/
+
+# Or deploy individually
+kubectl apply -f kubernetes/postgres.yml
+kubectl apply -f kubernetes/minio.yml
+kubectl apply -f kubernetes/hive-metastore.yml
+kubectl apply -f kubernetes/trino.yml
+kubectl apply -f kubernetes/spark.yml
+kubectl apply -f kubernetes/airflow.yml
 ```
 
 This will create all the necessary Deployments, Services, PersistentVolumeClaims, and Secrets.

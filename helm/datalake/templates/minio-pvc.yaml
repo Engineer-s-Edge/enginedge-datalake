@@ -6,13 +6,63 @@ metadata:
   namespace: {{ .Values.global.namespace }}
   labels:
     {{- include "datalake.minio.labels" . | nindent 4 }}
+    component: minio
+    tier: storage
+    persistence: enabled
+    bucket-type: primary
+  annotations:
+    {{- if .Values.minio.persistence.storageClass }}
+    volume.beta.kubernetes.io/storage-class: {{ .Values.minio.persistence.storageClass | quote }}
+    {{- end }}
+    description: "Primary storage for MinIO object storage - general purpose buckets"
+    backup-policy: {{ .Values.minio.persistence.backupPolicy | default "incremental" | quote }}
+    {{- with .Values.minio.persistence.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
 spec:
   accessModes:
-    - ReadWriteOnce
+    {{- toYaml .Values.minio.persistence.accessModes | nindent 4 }}
   {{- if .Values.minio.persistence.storageClass }}
   storageClassName: {{ .Values.minio.persistence.storageClass }}
   {{- end }}
   resources:
     requests:
       storage: {{ .Values.minio.persistence.size }}
+  {{- if .Values.minio.persistence.selector }}
+  selector:
+    {{- toYaml .Values.minio.persistence.selector | nindent 4 }}
+  {{- end }}
+{{- end }}
+
+{{- if and .Values.minio.enabled .Values.minio.lakehouse.enabled .Values.minio.lakehouse.persistence.enabled }}
+---
+# MinIO Lakehouse/Data Lake PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "datalake.fullname" . }}-minio-lakehouse-pvc
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "datalake.minio.labels" . | nindent 4 }}
+    component: minio
+    tier: storage
+    persistence: enabled
+    bucket-type: lakehouse
+  annotations:
+    {{- if .Values.minio.lakehouse.persistence.storageClass }}
+    volume.beta.kubernetes.io/storage-class: {{ .Values.minio.lakehouse.persistence.storageClass | quote }}
+    {{- end }}
+    description: "Lakehouse storage for MinIO - dedicated for large analytical datasets"
+    {{- with .Values.minio.lakehouse.persistence.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  accessModes:
+    {{- toYaml .Values.minio.lakehouse.persistence.accessModes | nindent 4 }}
+  {{- if .Values.minio.lakehouse.persistence.storageClass }}
+  storageClassName: {{ .Values.minio.lakehouse.persistence.storageClass }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.minio.lakehouse.persistence.size }}
 {{- end }}

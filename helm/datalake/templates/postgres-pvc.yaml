@@ -6,13 +6,29 @@ metadata:
   namespace: {{ .Values.global.namespace }}
   labels:
     {{- include "datalake.postgres.labels" . | nindent 4 }}
+    component: postgres
+    tier: database
+    persistence: enabled
+  annotations:
+    {{- if .Values.postgres.persistence.storageClass }}
+    volume.beta.kubernetes.io/storage-class: {{ .Values.postgres.persistence.storageClass | quote }}
+    {{- end }}
+    description: "Persistent storage for PostgreSQL database - stores Airflow metadata and Hive Metastore data"
+    backup-policy: {{ .Values.postgres.persistence.backupPolicy | default "daily" | quote }}
+    {{- with .Values.postgres.persistence.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
 spec:
   accessModes:
-    - ReadWriteOnce
+    {{- toYaml .Values.postgres.persistence.accessModes | nindent 4 }}
   {{- if .Values.postgres.persistence.storageClass }}
   storageClassName: {{ .Values.postgres.persistence.storageClass }}
   {{- end }}
   resources:
     requests:
       storage: {{ .Values.postgres.persistence.size }}
+  {{- if .Values.postgres.persistence.selector }}
+  selector:
+    {{- toYaml .Values.postgres.persistence.selector | nindent 4 }}
+  {{- end }}
 {{- end }}

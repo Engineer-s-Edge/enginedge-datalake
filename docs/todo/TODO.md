@@ -1,9 +1,5 @@
 # Datalake TODO (K8s, Observability, CI/CD)
 
-## Storage & Secrets
-- Define PVCs/SCs for Postgres, MinIO buckets
-- Kubernetes Secrets for database creds, MinIO keys (reuse minio-secret if shared)
-
 ## Rollout Steps
 - Helm install datalake chart(s)
 - Apply ServiceMonitors and dashboards
@@ -64,7 +60,7 @@
     - TLS/SSL configuration with cert-manager integration
     - Security headers and timeout configurations
 
-*   [X] Add a logging solution to the repository to log the data lake components.
+*   [x] Add a logging solution to the repository to log the data lake components.
     - Implemented Winston-based logging solution from EnginEdge monorepo
     - MyLogger service with pretty console output and file rotation
     - RequestContextService for request ID tracking across async operations
@@ -72,7 +68,7 @@
     - Supports multiple log levels, redaction of sensitive data, file rotation, and Sentry integration
     - Configurable via environment variables (LOG_LEVEL, LOG_DIR, LOG_ENABLE_CONSOLE, LOG_ENABLE_FILES, etc.)
     
-*   [X] Add a data lineage solution to the repository to track the lineage of the data in the data lake.
+*   [x] Add a data lineage solution to the repository to track the lineage of the data in the data lake.
     - Marquez (OpenLineage backend) for lineage storage and API
     - Tokern for data governance and lineage visualization
     - OpenLineage integration with Spark and Airflow
@@ -86,32 +82,35 @@
 *   [x] Fix the launch scripts to ensure they correctly use the `docker-compose.yml` file.
 *   [x] Address the hardcoded credentials by creating a `.env.example` file and updating the `README.md` and launch scripts.
 *   [x] Update the `README.md` to reflect the correct directory structure and remove references to the non-existent `datalake/` directory.
-*   [X] Add a `LICENSE` file to the repository.
-*   [X] Add a `CONTRIBUTING.md` file to the repository.
-*   [X] Add a `.dockerignore` file to the repository.
-*   [X] Add a data quality solution to the repository to ensure the quality of the data in the data lake.
-*   [X] Add a linter to the repository to enforce code quality.
-*   [X] Convert datalake from compose based to k8 based
-*   [X] Add a data discovery solution to the repository to discover the data in the data lake.
-*   [X] Add a data governance solution to the repository to govern the data in the data lake.
-*   [X] Add a monitoring solution to the repository to monitor the data lake components.
-*   [X] Add a testing framework to the repository to test the data lake components.
-*   [X] Add a CI/CD pipeline to the repository to automate testing and deployment.
-## Observability
-- [x] Expose Prometheus metrics endpoints (where supported) for ServiceMonitors:
-  - [x] Trino: /v1/metrics (configure Prometheus JMX exporter if needed)
-  - [x] Spark: JMX exporter sidecar for driver/executors
-  - [x] Airflow: /health (/metrics via exporter if desired)
-  - [x] MinIO: /minio/v2/metrics/cluster
-  - [x] Postgres: postgres_exporter sidecar
-- [x] Create ServiceMonitors under enginedge-core/platform/k8s/observability/servicemonitors/
-- [x] Add Grafana dashboards (ConfigMaps) for Trino/Spark/MinIO/Postgres
-## Integration with Core
-- Ensure data-processing-worker and scheduling-model envs point to Trino/S3 endpoints when applicable
-- [x] Ensure API Gateway does not expose datalake UIs publicly (admin-only)
-- [x] Create observability API endpoint for datalake health/metrics monitoring
-- [x] Integrate datalake into API Gateway with role-based access control
-## CI/CD
-- [x] Add GitHub Actions deploy job: build/push images (if custom)
-- [X] helm upgrade --install for datalake chart(s)
-- [x] Add docker compose config validation (already present)
+*   [x] Add a `LICENSE` file to the repository.
+*   [x] Add a `CONTRIBUTING.md` file to the repository.
+*   [x] Add a `.dockerignore` file to the repository.
+*   [x] Add a data quality solution to the repository to ensure the quality of the data in the data lake.
+*   [x] Add a linter to the repository to enforce code quality.
+*   [x] Convert datalake from compose based to k8 based
+*   [x] Add a data discovery solution to the repository to discover the data in the data lake.
+*   [x] Add a data governance solution to the repository to govern the data in the data lake.
+*   [x] Add a monitoring solution to the repository to monitor the data lake components.
+*   [x] Add a testing framework to the repository to test the data lake components.
+*   [x] Add a CI/CD pipeline to the repository to automate testing and deployment.
+  ## Observability
+  - [x] Expose Prometheus metrics endpoints (where supported) for ServiceMonitors:
+    - [x] Trino: /v1/metrics (configure Prometheus JMX exporter if needed)
+    - [x] Spark: JMX exporter sidecar for driver/executors
+    - [x] Airflow: /health (/metrics via exporter if desired)
+    - [x] MinIO: /minio/v2/metrics/cluster
+    - [x] Postgres: postgres_exporter sidecar
+  - [x] Create ServiceMonitors under enginedge-core/platform/k8s/observability/servicemonitors/
+  - [x] Add Grafana dashboards (ConfigMaps) for Trino/Spark/MinIO/Postgres
+  ## Integration with Core
+  - Ensure data-processing-worker and scheduling-model envs point to Trino/S3 endpoints when applicable
+  - [x] Ensure API Gateway does not expose datalake UIs publicly (admin-only)
+  - [x] Create observability API endpoint for datalake health/metrics monitoring
+  - [x] Integrate datalake into API Gateway with role-based access control
+  ## CI/CD
+  - [x] Add GitHub Actions deploy job: build/push images (if custom)
+  - [x] helm upgrade --install for datalake chart(s)
+  - [x] Add docker compose config validation (already present)
+  ## Storage & Secrets
+  - [x] Define PVCs/SCs for Postgres, MinIO buckets
+  - [x] Kubernetes Secrets for database creds, MinIO keys (reuse minio-secret if shared)

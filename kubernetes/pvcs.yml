@@ -1,0 +1,204 @@
+# Datalake Persistent Volume Claims
+# These PVCs provide persistent storage for PostgreSQL and MinIO
+# Adjust storageClassName based on your environment
+
+---
+# PostgreSQL Primary Database PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: datalake
+  labels:
+    app: enginedge
+    component: postgres
+    tier: database
+    persistence: enabled
+  annotations:
+    volume.beta.kubernetes.io/storage-class: "datalake-fast"
+    description: "Persistent storage for PostgreSQL database - stores Airflow metadata and Hive Metastore data"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: datalake-fast  # Use fast storage for database performance
+  resources:
+    requests:
+      storage: 10Gi
+  # Optional: Use selector to bind to pre-created PVs
+  # selector:
+  #   matchLabels:
+  #     app: postgres
+
+---
+# MinIO Object Storage PVC (Primary)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: minio-pvc
+  namespace: datalake
+  labels:
+    app: enginedge
+    component: minio
+    tier: storage
+    persistence: enabled
+    bucket-type: primary
+  annotations:
+    volume.beta.kubernetes.io/storage-class: "datalake-bulk"
+    description: "Primary storage for MinIO object storage - general purpose buckets"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: datalake-bulk  # Use bulk storage for cost-effective object storage
+  resources:
+    requests:
+      storage: 50Gi
+  # Optional: Use selector to bind to pre-created PVs
+  # selector:
+  #   matchLabels:
+  #     app: minio
+  #     bucket-type: primary
+
+---
+# MinIO Lakehouse/Data Lake PVC (for large analytical datasets)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: minio-lakehouse-pvc
+  namespace: datalake
+  labels:
+    app: enginedge
+    component: minio
+    tier: storage
+    persistence: enabled
+    bucket-type: lakehouse
+  annotations:
+    volume.beta.kubernetes.io/storage-class: "datalake-bulk"
+    description: "Lakehouse storage for MinIO - dedicated for large analytical datasets and data lake tables"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: datalake-bulk
+  resources:
+    requests:
+      storage: 100Gi
+
+---
+# MinIO Staging/Bronze Layer PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: minio-bronze-pvc
+  namespace: datalake
+  labels:
+    app: enginedge
+    component: minio
+    tier: storage
+    persistence: enabled
+    bucket-type: bronze
+    data-layer: raw
+  annotations:
+    volume.beta.kubernetes.io/storage-class: "datalake-bulk"
+    description: "Bronze layer storage - raw ingested data"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: datalake-bulk
+  resources:
+    requests:
+      storage: 50Gi
+
+---
+# MinIO Silver Layer PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: minio-silver-pvc
+  namespace: datalake
+  labels:
+    app: enginedge
+    component: minio
+    tier: storage
+    persistence: enabled
+    bucket-type: silver
+    data-layer: cleaned
+  annotations:
+    volume.beta.kubernetes.io/storage-class: "datalake-bulk"
+    description: "Silver layer storage - cleaned and transformed data"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: datalake-bulk
+  resources:
+    requests:
+      storage: 30Gi
+
+---
+# MinIO Gold Layer PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: minio-gold-pvc
+  namespace: datalake
+  labels:
+    app: enginedge
+    component: minio
+    tier: storage
+    persistence: enabled
+    bucket-type: gold
+    data-layer: curated
+  annotations:
+    volume.beta.kubernetes.io/storage-class: "datalake-fast"
+    description: "Gold layer storage - curated business-ready data"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: datalake-fast  # Use fast storage for frequently accessed curated data
+  resources:
+    requests:
+      storage: 20Gi
+
+---
+# Airflow Logs PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: airflow-logs-pvc
+  namespace: datalake
+  labels:
+    app: enginedge
+    component: airflow
+    tier: orchestration
+    persistence: enabled
+  annotations:
+    volume.beta.kubernetes.io/storage-class: "datalake-standard"
+    description: "Persistent storage for Airflow logs"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: datalake-standard
+  resources:
+    requests:
+      storage: 10Gi
+
+---
+# Airflow DAGs PVC (if using persistent DAGs)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: airflow-dags-pvc
+  namespace: datalake
+  labels:
+    app: enginedge
+    component: airflow
+    tier: orchestration
+    persistence: enabled
+  annotations:
+    volume.beta.kubernetes.io/storage-class: "datalake-standard"
+    description: "Persistent storage for Airflow DAGs"
+spec:
+  accessModes:
+    - ReadWriteMany  # Multiple pods may need to read DAGs
+  storageClassName: datalake-shared  # Use shared storage for RWX access
+  resources:
+    requests:
+      storage: 5Gi
