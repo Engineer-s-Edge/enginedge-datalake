@@ -15,12 +15,6 @@ spec:
     port: {{ .Values.trino.service.port }}
     targetPort: 8080
     protocol: TCP
-  {{- if .Values.trino.metrics.enabled }}
-  - name: metrics
-    port: 8080
-    targetPort: 8080
-    protocol: TCP
-  {{- end }}
   selector:
     {{- include "datalake.selectorLabels" . | nindent 4 }}
     app.kubernetes.io/component: trino
