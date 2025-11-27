@@ -14,8 +14,7 @@ spec:
     spec:
       containers:
         - name: datalake-observability
-          image: alpine:latest
-          command: ["/bin/sh", "-c", "echo 'Replace with your observability image' && sleep 3600"]
+          image: ghcr.io/chris-alexander-pop/datalake:latest
           ports:
             - containerPort: 3010
           envFrom:
