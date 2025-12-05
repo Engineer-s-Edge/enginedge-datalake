@@ -24,18 +24,28 @@ spec:
         command: ["/bin/bash", "-c"]
         args:
         - |
-          apt-get update && apt-get install -y curl &&
-          cd /opt/spark/jars &&
           {{- if .Values.spark.openlineage.enabled }}
-          curl -O https://repo1.maven.org/maven2/io/openlineage/openlineage-spark_2.12/{{ .Values.spark.openlineage.version }}/openlineage-spark_2.12-{{ .Values.spark.openlineage.version }}.jar &&
-          echo 'spark.extraListeners io.openlineage.spark.agent.OpenLineageSparkListener' > /opt/spark/conf/spark-defaults.conf &&
-          echo 'spark.openlineage.transport.type http' >> /opt/spark/conf/spark-defaults.conf &&
-          echo 'spark.openlineage.transport.url http://{{ include "datalake.fullname" . }}-marquez-api:5000' >> /opt/spark/conf/spark-defaults.conf &&
-          echo 'spark.openlineage.namespace {{ .Values.spark.openlineage.namespace }}' >> /opt/spark/conf/spark-defaults.conf &&
-          chown -R spark:spark /opt/spark/conf &&
-          chown -R spark:spark /opt/spark/jars &&
+          # Download OpenLineage jar if enabled and curl is available
+          if command -v curl > /dev/null 2>&1; then
+            cd /spark/jars 2>/dev/null || cd /opt/spark/jars && \
+            curl -L -O https://repo1.maven.org/maven2/io/openlineage/openlineage-spark_2.12/{{ .Values.spark.openlineage.version }}/openlineage-spark_2.12-{{ .Values.spark.openlineage.version }}.jar || true
+            # Configure OpenLineage
+            SPARK_CONF_DIR=/spark/conf; [ -d "$SPARK_CONF_DIR" ] || SPARK_CONF_DIR=/opt/spark/conf
+            mkdir -p $SPARK_CONF_DIR
+            cat > $SPARK_CONF_DIR/spark-defaults.conf << EOF
+          spark.extraListeners io.openlineage.spark.agent.OpenLineageSparkListener
+          spark.openlineage.transport.type http
+          spark.openlineage.transport.url http://{{ include "datalake.fullname" . }}-marquez-api:5000
+          spark.openlineage.namespace {{ .Values.spark.openlineage.namespace }}
+          EOF
+          fi
           {{- end }}
-          su spark -c '/opt/spark/bin/spark-class org.apache.spark.deploy.master.Master'
+          # Start Spark master - try both common paths
+          if [ -f /spark/bin/spark-class ]; then
+            /spark/bin/spark-class org.apache.spark.deploy.master.Master
+          else
+            /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master
+          fi
         ports:
         - name: web
           containerPort: 8080

@@ -25,15 +25,26 @@ spec:
       - name: airflow
         image: "{{ .Values.airflow.image.repository }}:{{ .Values.airflow.image.tag }}"
         imagePullPolicy: {{ .Values.airflow.image.pullPolicy }}
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          # Initialize database if needed
+          airflow db check || airflow db migrate
+          # Create admin user if needed
+          airflow users create \
+            --username ${_AIRFLOW_WWW_USER_USERNAME} \
+            --password ${_AIRFLOW_WWW_USER_PASSWORD} \
+            --firstname Admin \
+            --lastname User \
+            --role Admin \
+            --email admin@example.com || true
+          # Start webserver and scheduler
+          airflow scheduler & airflow webserver
         ports:
         - name: web
           containerPort: 8080
           protocol: TCP
         env:
-        - name: AIRFLOW__CORE__EXECUTOR
-          value: {{ .Values.airflow.executor }}
-        - name: AIRFLOW__DATABASE__SQL_ALCHEMY_CONN
-          value: "postgresql+psycopg2://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres:5432/$(POSTGRES_DB)"
         - name: POSTGRES_USER
           valueFrom:
             secretKeyRef:
@@ -49,6 +60,10 @@ spec:
             secretKeyRef:
               name: {{ include "datalake.fullname" . }}-postgres-secret
               key: database
+        - name: AIRFLOW__CORE__EXECUTOR
+          value: {{ .Values.airflow.executor }}
+        - name: AIRFLOW__DATABASE__SQL_ALCHEMY_CONN
+          value: "postgresql+psycopg2://{{ .Values.postgres.user }}:{{ .Values.postgres.password }}@postgres:5432/{{ .Values.postgres.database }}"
         - name: AIRFLOW_UID
           value: "50000"
         - name: AIRFLOW_GID

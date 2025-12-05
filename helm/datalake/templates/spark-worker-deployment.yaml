@@ -24,13 +24,19 @@ spec:
         command: ["/bin/bash", "-c"]
         args:
         - |
-          apt-get update && apt-get install -y curl &&
-          cd /opt/spark/jars &&
           {{- if .Values.spark.openlineage.enabled }}
-          curl -O https://repo1.maven.org/maven2/io/openlineage/openlineage-spark_2.12/{{ .Values.spark.openlineage.version }}/openlineage-spark_2.12-{{ .Values.spark.openlineage.version }}.jar &&
-          chown -R spark:spark /opt/spark/jars &&
+          # Download OpenLineage jar if enabled
+          if command -v curl > /dev/null 2>&1; then
+            cd /spark/jars 2>/dev/null || cd /opt/spark/jars && \
+            curl -L -O https://repo1.maven.org/maven2/io/openlineage/openlineage-spark_2.12/{{ .Values.spark.openlineage.version }}/openlineage-spark_2.12-{{ .Values.spark.openlineage.version }}.jar || true
+          fi
           {{- end }}
-          su spark -c '/opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://{{ include "datalake.fullname" . }}-spark-master:7077'
+          # Start Spark worker - try both common paths
+          if [ -f /spark/bin/spark-class ]; then
+            /spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://{{ include "datalake.fullname" . }}-spark-master:7077
+          else
+            /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://{{ include "datalake.fullname" . }}-spark-master:7077
+          fi
         ports:
         - name: web
           containerPort: 8081
