@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Client as PgClient } from 'pg';
 import { Client as MinioClient } from 'minio';
 
-interface ServiceStatus {
+export interface ServiceStatus {
   status: 'healthy' | 'unhealthy';
   endpoint: string;
   lastCheck: string;
