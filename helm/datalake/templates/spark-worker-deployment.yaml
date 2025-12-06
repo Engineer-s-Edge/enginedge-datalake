@@ -17,6 +17,7 @@ spec:
       labels:
         {{- include "datalake.spark-worker.labels" . | nindent 8 }}
     spec:
+      enableServiceLinks: false
       containers:
       - name: spark-worker
         image: "{{ .Values.spark.worker.image.repository }}:{{ .Values.spark.worker.image.tag }}"

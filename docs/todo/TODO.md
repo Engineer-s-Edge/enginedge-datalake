@@ -5,7 +5,7 @@
 ## In Progress
 
 ## Rollout Steps
-- Helm install datalake chart(s)
+- [x] Helm install datalake chart(s)
 - Apply ServiceMonitors and dashboards
 - Validate Prometheus targets up, Grafana dashboards render
 - Run smoke queries (Trino) and basic Spark job

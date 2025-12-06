@@ -17,6 +17,7 @@ spec:
       labels:
         {{- include "datalake.airflow.labels" . | nindent 8 }}
     spec:
+      enableServiceLinks: false
       initContainers:
       - name: wait-for-postgres
         image: busybox:1.28
@@ -28,8 +29,10 @@ spec:
         command: ["/bin/bash", "-c"]
         args:
         - |
-          # Initialize database if needed
-          airflow db check || airflow db migrate
+          # Wait a bit more for postgres to be fully ready
+          sleep 5
+          # Initialize database
+          airflow db upgrade
           # Create admin user if needed
           airflow users create \
             --username ${_AIRFLOW_WWW_USER_USERNAME} \
@@ -37,7 +40,7 @@ spec:
             --firstname Admin \
             --lastname User \
             --role Admin \
-            --email admin@example.com || true
+            --email admin@example.com 2>/dev/null || echo "User already exists"
           # Start webserver and scheduler
           airflow scheduler & airflow webserver
         ports:

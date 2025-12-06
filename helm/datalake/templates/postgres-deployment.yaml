@@ -17,6 +17,7 @@ spec:
       labels:
         {{- include "datalake.postgres.labels" . | nindent 8 }}
     spec:
+      enableServiceLinks: false
       containers:
       - name: postgres
         image: "{{ .Values.postgres.image.repository }}:{{ .Values.postgres.image.tag }}"

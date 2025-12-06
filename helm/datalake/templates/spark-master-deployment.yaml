@@ -17,6 +17,7 @@ spec:
       labels:
         {{- include "datalake.spark-master.labels" . | nindent 8 }}
     spec:
+      enableServiceLinks: false
       containers:
       - name: spark-master
         image: "{{ .Values.spark.master.image.repository }}:{{ .Values.spark.master.image.tag }}"
@@ -42,9 +43,9 @@ spec:
           {{- end }}
           # Start Spark master - try both common paths
           if [ -f /spark/bin/spark-class ]; then
-            /spark/bin/spark-class org.apache.spark.deploy.master.Master
+            /spark/bin/spark-class org.apache.spark.deploy.master.Master --host 0.0.0.0
           else
-            /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master
+            /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master --host 0.0.0.0
           fi
         ports:
         - name: web
@@ -56,6 +57,10 @@ spec:
         env:
         - name: SPARK_MASTER_HOST
           value: "{{ include "datalake.fullname" . }}-spark-master"
+        - name: SPARK_MASTER_PORT
+          value: "7077"
+        - name: SPARK_MASTER_WEBUI_PORT
+          value: "8080"
         livenessProbe:
           httpGet:
             path: /
