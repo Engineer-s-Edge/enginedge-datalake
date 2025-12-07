@@ -6,9 +6,14 @@
 
 ## Rollout Steps
 - [x] Helm install datalake chart(s)
-- Apply ServiceMonitors and dashboards
-- Validate Prometheus targets up, Grafana dashboards render
-- Run smoke queries (Trino) and basic Spark job
+- [x] Apply ServiceMonitors and dashboards
+  - Created apply-observability.ps1 script for deploying ServiceMonitors and dashboards
+  - Created comprehensive Grafana dashboards for Trino, MinIO, Spark, PostgreSQL, and Airflow
+  - Created validate-observability.ps1 script for validation
+  - ServiceMonitors configured for all datalake components with appropriate metrics endpoints
+  - All dashboards include health status, performance metrics, and resource utilization
+- [ ] Validate Prometheus targets up, Grafana dashboards render
+- [ ] Run smoke queries (Trino) and basic Spark job
 
 ## Completed
 
