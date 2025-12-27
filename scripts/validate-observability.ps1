@@ -23,10 +23,10 @@ param(
 $ErrorActionPreference = "Stop"
 
 # Colors for output
-function Write-Info { param($msg) Write-Host "ℹ️  $msg" -ForegroundColor Cyan }
-function Write-Success { param($msg) Write-Host "✅ $msg" -ForegroundColor Green }
-function Write-Warning-Custom { param($msg) Write-Host "⚠️  $msg" -ForegroundColor Yellow }
-function Write-Error-Custom { param($msg) Write-Host "❌ $msg" -ForegroundColor Red }
+function Write-Info { param($msg) Write-Host "[INFO] $msg" -ForegroundColor Cyan }
+function Write-Success { param($msg) Write-Host "[OK] $msg" -ForegroundColor Green }
+function Write-Warning-Custom { param($msg) Write-Host "[WARN] $msg" -ForegroundColor Yellow }
+function Write-Error-Custom { param($msg) Write-Host "[ERROR] $msg" -ForegroundColor Red }
 
 Write-Info "Starting Datalake Observability Validation..."
 Write-Info "Datalake Namespace: $Namespace"
@@ -90,7 +90,7 @@ $servicesFound = 0
 foreach ($svc in $expectedServices) {
     $service = kubectl get service $svc -n $Namespace -o jsonpath='{.metadata.name}' 2>$null
     if ($service) {
-        Write-Success "  ✓ Service '$svc' exists"
+        Write-Success "  Service '$svc' exists"
         $servicesFound++
         
         # Check if service has required labels
@@ -101,7 +101,7 @@ foreach ($svc in $expectedServices) {
             Write-Warning-Custom "    - Missing label: app=enginedge"
         }
     } else {
-        Write-Warning-Custom "  ✗ Service '$svc' not found"
+        Write-Warning-Custom "  Service '$svc' not found"
     }
 }
 
@@ -169,7 +169,7 @@ if ($prometheusNs) {
                     foreach ($target in $datalakeTargets) {
                         $health = $target.health
                         $job = $target.labels.job
-                        $emoji = if ($health -eq "up") { "✓" } else { "✗" }
+                        $emoji = if ($health -eq "up") { "[OK]" } else { "[X]" }
                         $color = if ($health -eq "up") { "Green" } else { "Red" }
                         Write-Host "  $emoji $job - $health" -ForegroundColor $color
                     }
@@ -219,7 +219,7 @@ $totalChecks = $validationResults.Count
 
 Write-Host ""
 foreach ($check in $validationResults.GetEnumerator()) {
-    $status = if ($check.Value) { "✅ PASS" } else { "❌ FAIL" }
+    $status = if ($check.Value) { "[PASS]" } else { "[FAIL]" }
     $color = if ($check.Value) { "Green" } else { "Red" }
     Write-Host "  $status - $($check.Key)" -ForegroundColor $color
 }
