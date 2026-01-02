@@ -4,7 +4,9 @@
 
 ## In Progress
 
-## Rollout Steps
+## Completed
+
+  ## Rollout Steps
 - [x] Helm install datalake chart(s)
 - [x] Apply ServiceMonitors and dashboards
   - Created apply-observability.ps1 script for deploying ServiceMonitors and dashboards
@@ -22,10 +24,19 @@
   - Grafana accessible at http://localhost:3000 (admin/admin)
   - Prometheus accessible at http://localhost:9090
   - Known issues: Trino /v1/metrics endpoint needs configuration, MinIO metrics require auth token
-- [ ] Run smoke queries (Trino) and basic Spark job
-
-## Completed
-
+- [x] Run smoke queries (Trino) and basic Spark job
+  - **Trino Smoke Tests - PASSED**
+    - Successfully executed SHOW CATALOGS (catalogs: hive, memory, system)
+    - Queried system.runtime.nodes (1 active node)
+    - Created test schema: memory.smoke_test
+    - Created and populated test table with sample data
+    - Successfully queried and retrieved 3 rows of test data
+  - **Spark Smoke Tests - PASSED**
+    - Executed SparkPi example with 10 partitions
+    - Successfully calculated: Pi is roughly 3.14016714016714
+    - Job completed in 10.6 seconds with all 10 tasks successful
+    - Spark version: 3.3.0 with Hadoop 3.3
+    - Note: Spark master JMX exporter image unavailable (bitnami/jmx-exporter:0.17.2 not found)
   - [x] Add values files for local cluster (storage classes / PVs)
     - Created values-local.yaml optimized for local Kubernetes clusters (kind, k3d, Docker Desktop, Minikube)
     - Reduced resource allocations suitable for local development (256Mi-1Gi memory, 100m-500m CPU)
