@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 # Get the directory where this script is located
-# Strip CRLF characters to handle Windows line endings on Linux
-hook_dir="$(cd "$(dirname "$0")" && pwd | tr -d '\r')"
+# Strip CRLF and newline characters to handle Windows line endings on Linux
+hook_dir="$(cd "$(dirname "$0")" && pwd | tr -d '\r\n')"
 . "$hook_dir/_/husky.sh"
 
 npx lint-staged
