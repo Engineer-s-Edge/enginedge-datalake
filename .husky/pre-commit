@@ -1,7 +1,8 @@
 #!/usr/bin/env sh
-# Get the directory where this script is located
-# Strip CRLF and newline characters to handle Windows line endings on Linux
-hook_dir="$(cd "$(dirname "$0")" && pwd | tr -d '\r\n')"
-. "$hook_dir/_/husky.sh"
-
+# Pre-commit hook - run lint-staged
+# Use here-doc to avoid CRLF line ending issues
+# Change to git repo root where package.json is located
+cd "$(git rev-parse --show-toplevel 2>/dev/null)" 2>/dev/null || true
+sh <<'ENDOFSCRIPT'
 npx lint-staged
+ENDOFSCRIPT
