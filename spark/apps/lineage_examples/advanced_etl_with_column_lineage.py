@@ -61,12 +61,13 @@ def read_customer_data(spark, customer_path):
     Read customer information.
     
     Lineage tracked:
-    - Dataset: s3a://data-lake/processed/customers/
+    - Dataset: table default.processed_customers
     - Columns: customer_id, name, email, region, segment
     """
-    print(f"Reading customer data from: {customer_path}")
+    table_name = "default.processed_customers"
+    print(f"Reading customer data from table: {table_name}")
     
-    df = spark.read.parquet(customer_path)
+    df = spark.read.table(table_name)
     
     print(f"Customer records: {df.count()}")
     return df

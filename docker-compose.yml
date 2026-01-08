@@ -56,7 +56,13 @@ services:
         apt-get update && apt-get install -y curl &&
         cd /opt/spark/jars &&
         curl -O https://repo1.maven.org/maven2/io/openlineage/openlineage-spark_2.12/1.39.0/openlineage-spark_2.12-1.39.0.jar &&
+        curl -O https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-spark-runtime-3.3_2.12/1.4.2/iceberg-spark-runtime-3.3_2.12-1.4.2.jar &&
         echo 'spark.extraListeners io.openlineage.spark.agent.OpenLineageSparkListener' > /opt/spark/conf/spark-defaults.conf &&
+        echo 'spark.sql.extensions org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions' >> /opt/spark/conf/spark-defaults.conf &&
+        echo 'spark.sql.catalog.spark_catalog org.apache.iceberg.spark.SparkCatalog' >> /opt/spark/conf/spark-defaults.conf &&
+        echo 'spark.sql.catalog.spark_catalog.type hive' >> /opt/spark/conf/spark-defaults.conf &&
+        echo 'spark.sql.catalog.spark_catalog.uri thrift://hive-metastore:9083' >> /opt/spark/conf/spark-defaults.conf &&
+        echo 'spark.sql.catalog.spark_catalog.s3.endpoint http://minio:9000' >> /opt/spark/conf/spark-defaults.conf &&
         echo 'spark.openlineage.transport.type http' >> /opt/spark/conf/spark-defaults.conf &&
         echo 'spark.openlineage.transport.url http://marquez-api:5000' >> /opt/spark/conf/spark-defaults.conf &&
         echo 'spark.openlineage.namespace datalake' >> /opt/spark/conf/spark-defaults.conf &&
@@ -83,6 +89,7 @@ services:
         apt-get update && apt-get install -y curl &&
         cd /opt/spark/jars &&
         curl -O https://repo1.maven.org/maven2/io/openlineage/openlineage-spark_2.12/1.39.0/openlineage-spark_2.12-1.39.0.jar &&
+        curl -O https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-spark-runtime-3.3_2.12/1.4.2/iceberg-spark-runtime-3.3_2.12-1.4.2.jar &&
         chown -R spark:spark /opt/spark/jars &&
         su spark -c '/opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077'
       "

@@ -61,8 +61,8 @@ def stage_1_ingest(input_path, output_path):
         df_bronze = df.withColumn("ingestion_timestamp", current_timestamp()) \
                       .withColumn("source_system", lit("raw_file"))
         
-        print(f"Writing bronze layer to: {output_path}")
-        df_bronze.write.mode("overwrite").parquet(output_path)
+        print(f"Writing bronze layer to table: default.bronze_layer")
+        df_bronze.writeTo("default.bronze_layer").createOrReplace()
         
         print(f"✓ Stage 1 complete: {df_bronze.count()} records")
         return True
@@ -88,8 +88,8 @@ def stage_2_clean(input_path, output_path):
     spark = create_spark_session("clean")
     
     try:
-        print(f"Reading bronze layer from: {input_path}")
-        df = spark.read.parquet(input_path)
+        print(f"Reading bronze layer from table: default.bronze_layer")
+        df = spark.read.table("default.bronze_layer")
         
         # Clean and standardize
         df_silver = df.dropDuplicates() \
@@ -99,8 +99,8 @@ def stage_2_clean(input_path, output_path):
             .withColumn("cleaning_timestamp", current_timestamp()) \
             .withColumn("data_quality_score", lit(0.95))
         
-        print(f"Writing silver layer to: {output_path}")
-        df_silver.write.mode("overwrite").parquet(output_path)
+        print(f"Writing silver layer to table: default.silver_layer")
+        df_silver.writeTo("default.silver_layer").createOrReplace()
         
         print(f"✓ Stage 2 complete: {df_silver.count()} records")
         return True
