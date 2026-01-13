@@ -49,11 +49,13 @@ services:
       - "7077:7077"
     volumes:
       - ./spark/apps:/opt/spark-apps
+      - ./spark/jars:/opt/spark/jars
     environment:
       SPARK_MASTER_HOST: spark-master
     command: >
       bash -c "
-        apt-get update && apt-get install -y curl &&
+        apt-get update && apt-get install -y curl python3-pip &&
+        pip3 install boto3 &&
         cd /opt/spark/jars &&
         curl -O https://repo1.maven.org/maven2/io/openlineage/openlineage-spark_2.12/1.39.0/openlineage-spark_2.12-1.39.0.jar &&
         curl -O https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-spark-runtime-3.3_2.12/1.4.2/iceberg-spark-runtime-3.3_2.12-1.4.2.jar &&
@@ -82,11 +84,13 @@ services:
       - "8081:8081"
     volumes:
       - ./spark/apps:/opt/spark-apps
+      - ./spark/jars:/opt/spark/jars
     environment:
       SPARK_MASTER: spark://spark-master:7077
     command: >
       bash -c "
-        apt-get update && apt-get install -y curl &&
+        apt-get update && apt-get install -y curl python3-pip &&
+        pip3 install boto3 &&
         cd /opt/spark/jars &&
         curl -O https://repo1.maven.org/maven2/io/openlineage/openlineage-spark_2.12/1.39.0/openlineage-spark_2.12-1.39.0.jar &&
         curl -O https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-spark-runtime-3.3_2.12/1.4.2/iceberg-spark-runtime-3.3_2.12-1.4.2.jar &&
