@@ -1,0 +1,63 @@
+{{- if .Values.airflow.enabled }}
+{{- if .Values.airflow.persistence.logs.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "datalake.fullname" . }}-airflow-logs-pvc
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "datalake.airflow.labels" . | nindent 4 }}
+    component: airflow
+    tier: orchestration
+    persistence: enabled
+    data-type: logs
+  annotations:
+    {{- if .Values.airflow.persistence.logs.storageClass }}
+    volume.beta.kubernetes.io/storage-class: {{ .Values.airflow.persistence.logs.storageClass | quote }}
+    {{- end }}
+    description: "Persistent storage for Airflow logs"
+    {{- with .Values.airflow.persistence.logs.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  accessModes:
+    {{- toYaml .Values.airflow.persistence.logs.accessModes | nindent 4 }}
+  {{- if .Values.airflow.persistence.logs.storageClass }}
+  storageClassName: {{ .Values.airflow.persistence.logs.storageClass }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.airflow.persistence.logs.size }}
+{{- end }}
+---
+{{- if .Values.airflow.persistence.plugins.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "datalake.fullname" . }}-airflow-plugins-pvc
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "datalake.airflow.labels" . | nindent 4 }}
+    component: airflow
+    tier: orchestration
+    persistence: enabled
+    data-type: plugins
+  annotations:
+    {{- if .Values.airflow.persistence.plugins.storageClass }}
+    volume.beta.kubernetes.io/storage-class: {{ .Values.airflow.persistence.plugins.storageClass | quote }}
+    {{- end }}
+    description: "Persistent storage for Airflow plugins"
+    {{- with .Values.airflow.persistence.plugins.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  accessModes:
+    {{- toYaml .Values.airflow.persistence.plugins.accessModes | nindent 4 }}
+  {{- if .Values.airflow.persistence.plugins.storageClass }}
+  storageClassName: {{ .Values.airflow.persistence.plugins.storageClass }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.airflow.persistence.plugins.size }}
+{{- end }}
+{{- end }}

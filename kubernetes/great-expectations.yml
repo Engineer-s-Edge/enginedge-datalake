@@ -1,0 +1,55 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: great-expectations-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: great-expectations
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: great-expectations
+  template:
+    metadata:
+      labels:
+        app: great-expectations
+    spec:
+      containers:
+        - name: great-expectations
+          image: powerdatahub/great-expectations-docker:0.8.7
+          ports:
+            - containerPort: 8000
+          command:
+            - python
+            - -m
+            - http.server
+            - "8000"
+            - -d
+            - /usr/app/great_expectations/uncommitted/data_docs/local_site
+          volumeMounts:
+            - name: great-expectations-data
+              mountPath: /usr/app/great_expectations
+      volumes:
+        - name: great-expectations-data
+          persistentVolumeClaim:
+            claimName: great-expectations-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: great-expectations
+spec:
+  selector:
+    app: great-expectations
+  ports:
+    - port: 8000
+      targetPort: 8000

@@ -1,0 +1,64 @@
+Thank you for installing {{ .Chart.Name }}!
+
+Your EnginEdge Data Lake has been deployed with the following components:
+
+{{- if .Values.minio.enabled }}
+✓ MinIO - S3-compatible object storage
+  - Service: minio:{{ .Values.minio.service.port }} (API)
+  - Console: minio:{{ .Values.minio.service.consolePort }}
+{{- end }}
+
+{{- if .Values.postgres.enabled }}
+✓ PostgreSQL - Database backend
+  - Service: postgres:{{ .Values.postgres.service.port }}
+  - Database: {{ .Values.postgres.database }}
+{{- end }}
+
+{{- if .Values.hiveMetastore.enabled }}
+✓ Hive Metastore - Metadata management
+  - Service: hive-metastore:{{ .Values.hiveMetastore.service.port }}
+{{- end }}
+
+{{- if .Values.trino.enabled }}
+✓ Trino - Distributed SQL query engine
+  - Service: trino:{{ .Values.trino.service.port }}
+  - Web UI: http://trino:{{ .Values.trino.service.port }}
+{{- end }}
+
+{{- if .Values.spark.enabled }}
+✓ Apache Spark - Distributed processing
+  - Master: spark-master:{{ .Values.spark.master.service.masterPort }}
+  - Master UI: http://spark-master:{{ .Values.spark.master.service.webPort }}
+  - Worker UI: http://spark-worker:{{ .Values.spark.worker.service.webPort }}
+{{- end }}
+
+{{- if .Values.airflow.enabled }}
+✓ Apache Airflow - Workflow orchestration
+  - Web UI: http://airflow:{{ .Values.airflow.service.port }}
+  - Username: {{ .Values.airflow.webserverUser }}
+  - Password: {{ .Values.airflow.webserverPassword }}
+{{- end }}
+
+{{- if .Values.marquez.enabled }}
+✓ Marquez - Data lineage tracking
+  - API: http://{{ include "datalake.fullname" . }}-marquez-api:{{ .Values.marquez.api.service.port }}
+  - Web UI: http://{{ include "datalake.fullname" . }}-marquez-web:{{ .Values.marquez.web.service.port }}
+{{- end }}
+
+To access the services:
+
+1. Port-forward to access UIs locally:
+   kubectl port-forward -n {{ .Values.global.namespace }} svc/trino 8080:8080
+   kubectl port-forward -n {{ .Values.global.namespace }} svc/airflow 8082:8080
+   kubectl port-forward -n {{ .Values.global.namespace }} svc/spark-master 8083:8080
+   kubectl port-forward -n {{ .Values.global.namespace }} svc/minio 9001:9001
+
+2. Check pod status:
+   kubectl get pods -n {{ .Values.global.namespace }}
+
+3. View logs:
+   kubectl logs -n {{ .Values.global.namespace }} -l app.kubernetes.io/name={{ include "datalake.name" . }}
+
+For more information, visit:
+- Documentation: https://github.com/Chris-Alexander-Pop/enginedge-datalake
+- Issues: https://github.com/Chris-Alexander-Pop/enginedge-datalake/issues

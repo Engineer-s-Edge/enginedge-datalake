@@ -47,6 +47,7 @@ trino/var/
 .env.local
 .env.production
 .env.staging
+kubernetes/secrets.yml
 
 # OS generated files
 .DS_Store
@@ -95,7 +96,6 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-package-lock.json
 yarn.lock
 
 # Python cache (if using Python scripts)

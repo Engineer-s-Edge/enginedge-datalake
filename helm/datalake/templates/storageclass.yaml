@@ -1,0 +1,100 @@
+{{- if .Values.storageClass.enabled }}
+---
+# Standard StorageClass for general purpose storage
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: {{ .Values.storageClass.standard.name }}
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "datalake.labels" . | nindent 4 }}
+    component: storage
+    tier: standard
+  annotations:
+    storageclass.kubernetes.io/is-default-class: {{ .Values.storageClass.standard.isDefault | quote }}
+    description: "Standard storage for datalake components"
+provisioner: {{ .Values.storageClass.standard.provisioner }}
+volumeBindingMode: {{ .Values.storageClass.standard.volumeBindingMode }}
+reclaimPolicy: {{ .Values.storageClass.standard.reclaimPolicy }}
+allowVolumeExpansion: {{ .Values.storageClass.standard.allowVolumeExpansion }}
+{{- if .Values.storageClass.standard.parameters }}
+parameters:
+  {{- toYaml .Values.storageClass.standard.parameters | nindent 2 }}
+{{- end }}
+
+---
+# Fast SSD StorageClass for production workloads
+{{- if .Values.storageClass.fast.enabled }}
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: {{ .Values.storageClass.fast.name }}
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "datalake.labels" . | nindent 4 }}
+    component: storage
+    tier: performance
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "false"
+    description: "High-performance SSD storage for production databases"
+provisioner: {{ .Values.storageClass.fast.provisioner }}
+volumeBindingMode: {{ .Values.storageClass.fast.volumeBindingMode }}
+reclaimPolicy: {{ .Values.storageClass.fast.reclaimPolicy }}
+allowVolumeExpansion: {{ .Values.storageClass.fast.allowVolumeExpansion }}
+{{- if .Values.storageClass.fast.parameters }}
+parameters:
+  {{- toYaml .Values.storageClass.fast.parameters | nindent 2 }}
+{{- end }}
+{{- end }}
+
+---
+# Bulk storage for large datasets
+{{- if .Values.storageClass.bulk.enabled }}
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: {{ .Values.storageClass.bulk.name }}
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "datalake.labels" . | nindent 4 }}
+    component: storage
+    tier: capacity
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "false"
+    description: "High-capacity storage for large datasets"
+provisioner: {{ .Values.storageClass.bulk.provisioner }}
+volumeBindingMode: {{ .Values.storageClass.bulk.volumeBindingMode }}
+reclaimPolicy: {{ .Values.storageClass.bulk.reclaimPolicy }}
+allowVolumeExpansion: {{ .Values.storageClass.bulk.allowVolumeExpansion }}
+{{- if .Values.storageClass.bulk.parameters }}
+parameters:
+  {{- toYaml .Values.storageClass.bulk.parameters | nindent 2 }}
+{{- end }}
+{{- end }}
+
+---
+# Shared storage for ReadWriteMany access
+{{- if .Values.storageClass.shared.enabled }}
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: {{ .Values.storageClass.shared.name }}
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "datalake.labels" . | nindent 4 }}
+    component: storage
+    tier: shared
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "false"
+    description: "Shared storage supporting ReadWriteMany"
+provisioner: {{ .Values.storageClass.shared.provisioner }}
+volumeBindingMode: {{ .Values.storageClass.shared.volumeBindingMode }}
+reclaimPolicy: {{ .Values.storageClass.shared.reclaimPolicy }}
+allowVolumeExpansion: {{ .Values.storageClass.shared.allowVolumeExpansion }}
+{{- if .Values.storageClass.shared.parameters }}
+parameters:
+  {{- toYaml .Values.storageClass.shared.parameters | nindent 2 }}
+{{- end }}
+{{- end }}
+
+{{- end }}

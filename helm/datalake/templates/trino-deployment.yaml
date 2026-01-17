@@ -1,0 +1,54 @@
+{{- if .Values.trino.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "datalake.fullname" . }}-trino
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "datalake.trino.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.trino.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "datalake.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: trino
+  template:
+    metadata:
+      labels:
+        {{- include "datalake.trino.labels" . | nindent 8 }}
+    spec:
+      containers:
+      - name: trino
+        image: "{{ .Values.trino.image.repository }}:{{ .Values.trino.image.tag }}"
+        imagePullPolicy: {{ .Values.trino.image.pullPolicy }}
+        ports:
+        - name: http
+          containerPort: 8080
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /v1/info
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /v1/info
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        resources:
+          {{- toYaml .Values.trino.resources | nindent 10 }}
+        volumeMounts:
+        - name: config
+          mountPath: /etc/trino
+        - name: catalog
+          mountPath: /etc/trino/catalog
+      volumes:
+      - name: config
+        configMap:
+          name: {{ include "datalake.fullname" . }}-trino-config
+      - name: catalog
+        configMap:
+          name: {{ include "datalake.fullname" . }}-trino-catalog
+{{- end }}

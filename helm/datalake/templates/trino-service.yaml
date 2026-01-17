@@ -1,0 +1,21 @@
+{{- if .Values.trino.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: trino
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "datalake.trino.labels" . | nindent 4 }}
+    app: enginedge
+    component: trino
+spec:
+  type: {{ .Values.trino.service.type }}
+  ports:
+  - name: http
+    port: {{ .Values.trino.service.port }}
+    targetPort: 8080
+    protocol: TCP
+  selector:
+    {{- include "datalake.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: trino
+{{- end }}

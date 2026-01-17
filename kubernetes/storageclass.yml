@@ -1,0 +1,100 @@
+# Datalake Storage Classes
+# These StorageClasses provide persistent storage for datalake components
+# Choose the appropriate StorageClass based on your environment and requirements
+
+---
+# Standard StorageClass for general purpose storage (development/testing)
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: datalake-standard
+  labels:
+    app: enginedge
+    component: storage
+    tier: standard
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "false"
+    description: "Standard storage for datalake components - suitable for development and testing"
+provisioner: kubernetes.io/no-provisioner  # Change to your cloud provider's provisioner
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Delete
+allowVolumeExpansion: true
+
+---
+# Fast SSD StorageClass for production workloads requiring high IOPS
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: datalake-fast
+  labels:
+    app: enginedge
+    component: storage
+    tier: performance
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "false"
+    description: "High-performance SSD storage for production databases and critical workloads"
+provisioner: kubernetes.io/no-provisioner  # Change to your cloud provider's provisioner (e.g., kubernetes.io/gce-pd for GCP)
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Retain
+allowVolumeExpansion: true
+parameters:
+  type: pd-ssd  # Example for GCP - adjust for your provider (e.g., gp3 for AWS, Premium_LRS for Azure)
+  fsType: ext4
+
+---
+# Bulk storage for large datasets (MinIO buckets, data lakes)
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: datalake-bulk
+  labels:
+    app: enginedge
+    component: storage
+    tier: capacity
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "false"
+    description: "High-capacity storage for large datasets and object storage"
+provisioner: kubernetes.io/no-provisioner  # Change to your cloud provider's provisioner
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Delete
+allowVolumeExpansion: true
+parameters:
+  type: pd-standard  # Example for GCP - use standard/HDD for cost-effective bulk storage
+
+---
+# Local storage for kind/k3d/Docker Desktop clusters
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: datalake-local
+  labels:
+    app: enginedge
+    component: storage
+    tier: local
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "false"
+    description: "Local storage for development clusters (kind, k3d, Docker Desktop)"
+provisioner: rancher.io/local-path  # Works with kind and k3d
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Delete
+allowVolumeExpansion: true
+
+---
+# Shared storage for components that need ReadWriteMany access
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: datalake-shared
+  labels:
+    app: enginedge
+    component: storage
+    tier: shared
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "false"
+    description: "Shared storage supporting ReadWriteMany for multi-pod access"
+provisioner: kubernetes.io/no-provisioner  # Change to NFS or other RWX-capable provisioner
+volumeBindingMode: Immediate
+reclaimPolicy: Retain
+allowVolumeExpansion: true
+parameters:
+  type: nfs  # Example - adjust based on your shared storage solution

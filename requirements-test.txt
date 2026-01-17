@@ -1,0 +1,7 @@
+pytest
+boto3
+psycopg2-binary
+trino
+pyspark
+moto
+pytest-mock

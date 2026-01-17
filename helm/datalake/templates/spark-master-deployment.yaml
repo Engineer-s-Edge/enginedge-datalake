@@ -1,0 +1,107 @@
+{{- if .Values.spark.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "datalake.fullname" . }}-spark-master
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "datalake.spark-master.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.spark.master.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "datalake.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: spark-master
+  template:
+    metadata:
+      labels:
+        {{- include "datalake.spark-master.labels" . | nindent 8 }}
+    spec:
+      enableServiceLinks: false
+      containers:
+      - name: spark-master
+        image: "{{ .Values.spark.master.image.repository }}:{{ .Values.spark.master.image.tag }}"
+        imagePullPolicy: {{ .Values.spark.master.image.pullPolicy }}
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          {{- if .Values.spark.openlineage.enabled }}
+          # Download OpenLineage jar if enabled and curl is available
+          if command -v curl > /dev/null 2>&1; then
+            cd /spark/jars 2>/dev/null || cd /opt/spark/jars && \
+            curl -L -O https://repo1.maven.org/maven2/io/openlineage/openlineage-spark_2.12/{{ .Values.spark.openlineage.version }}/openlineage-spark_2.12-{{ .Values.spark.openlineage.version }}.jar || true
+            # Configure OpenLineage
+            SPARK_CONF_DIR=/spark/conf; [ -d "$SPARK_CONF_DIR" ] || SPARK_CONF_DIR=/opt/spark/conf
+            mkdir -p $SPARK_CONF_DIR
+            cat > $SPARK_CONF_DIR/spark-defaults.conf << EOF
+          spark.extraListeners io.openlineage.spark.agent.OpenLineageSparkListener
+          spark.openlineage.transport.type http
+          spark.openlineage.transport.url http://{{ include "datalake.fullname" . }}-marquez-api:5000
+          spark.openlineage.namespace {{ .Values.spark.openlineage.namespace }}
+          EOF
+          fi
+          {{- end }}
+          # Start Spark master - try both common paths
+          if [ -f /spark/bin/spark-class ]; then
+            /spark/bin/spark-class org.apache.spark.deploy.master.Master --host 0.0.0.0
+          else
+            /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master --host 0.0.0.0
+          fi
+        ports:
+        - name: web
+          containerPort: 8080
+          protocol: TCP
+        - name: master
+          containerPort: 7077
+          protocol: TCP
+        env:
+        - name: SPARK_MASTER_HOST
+          value: "{{ include "datalake.fullname" . }}-spark-master"
+        - name: SPARK_MASTER_PORT
+          value: "7077"
+        - name: SPARK_MASTER_WEBUI_PORT
+          value: "8080"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        resources:
+          {{- toYaml .Values.spark.master.resources | nindent 10 }}
+        volumeMounts:
+        - name: spark-apps
+          mountPath: /opt/spark-apps
+      {{- if .Values.spark.metrics.enabled }}
+      - name: jmx-exporter
+        image: {{ .Values.spark.metrics.jmxExporter.image }}
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: metrics
+          containerPort: 9090
+          protocol: TCP
+        command:
+        - java
+        - -jar
+        - jmx_prometheus_httpserver.jar
+        - "9090"
+        - /etc/jmx-exporter/config.yml
+        volumeMounts:
+        - name: jmx-config
+          mountPath: /etc/jmx-exporter
+      {{- end }}
+      volumes:
+      - name: spark-apps
+        emptyDir: {}
+      {{- if .Values.spark.metrics.enabled }}
+      - name: jmx-config
+        configMap:
+          name: {{ include "datalake.fullname" . }}-spark-jmx-config
+      {{- end }}
+{{- end }}

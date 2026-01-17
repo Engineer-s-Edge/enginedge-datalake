@@ -1,0 +1,57 @@
+{{- if .Values.spark.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: spark-master
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "datalake.spark-master.labels" . | nindent 4 }}
+    app: enginedge
+    component: spark-master
+spec:
+  type: {{ .Values.spark.master.service.type }}
+  ports:
+  - name: web
+    port: {{ .Values.spark.master.service.webPort }}
+    targetPort: 8080
+    protocol: TCP
+  - name: master
+    port: {{ .Values.spark.master.service.masterPort }}
+    targetPort: 7077
+    protocol: TCP
+  {{- if .Values.spark.metrics.enabled }}
+  - name: metrics
+    port: 9090
+    targetPort: 9090
+    protocol: TCP
+  {{- end }}
+  selector:
+    {{- include "datalake.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: spark-master
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: spark-worker
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "datalake.spark-worker.labels" . | nindent 4 }}
+    app: enginedge
+    component: spark-worker
+spec:
+  type: {{ .Values.spark.worker.service.type }}
+  ports:
+  - name: web
+    port: {{ .Values.spark.worker.service.webPort }}
+    targetPort: 8081
+    protocol: TCP
+  {{- if .Values.spark.metrics.enabled }}
+  - name: metrics
+    port: 9090
+    targetPort: 9090
+    protocol: TCP
+  {{- end }}
+  selector:
+    {{- include "datalake.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: spark-worker
+{{- end }}

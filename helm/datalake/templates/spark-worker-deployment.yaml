@@ -1,0 +1,68 @@
+{{- if .Values.spark.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "datalake.fullname" . }}-spark-worker
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "datalake.spark-worker.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.spark.worker.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "datalake.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: spark-worker
+  template:
+    metadata:
+      labels:
+        {{- include "datalake.spark-worker.labels" . | nindent 8 }}
+    spec:
+      enableServiceLinks: false
+      containers:
+      - name: spark-worker
+        image: "{{ .Values.spark.worker.image.repository }}:{{ .Values.spark.worker.image.tag }}"
+        imagePullPolicy: {{ .Values.spark.worker.image.pullPolicy }}
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          {{- if .Values.spark.openlineage.enabled }}
+          # Download OpenLineage jar if enabled
+          if command -v curl > /dev/null 2>&1; then
+            cd /spark/jars 2>/dev/null || cd /opt/spark/jars && \
+            curl -L -O https://repo1.maven.org/maven2/io/openlineage/openlineage-spark_2.12/{{ .Values.spark.openlineage.version }}/openlineage-spark_2.12-{{ .Values.spark.openlineage.version }}.jar || true
+          fi
+          {{- end }}
+          # Start Spark worker - try both common paths
+          if [ -f /spark/bin/spark-class ]; then
+            /spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://{{ include "datalake.fullname" . }}-spark-master:7077
+          else
+            /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://{{ include "datalake.fullname" . }}-spark-master:7077
+          fi
+        ports:
+        - name: web
+          containerPort: 8081
+          protocol: TCP
+        env:
+        - name: SPARK_MASTER
+          value: "spark://{{ include "datalake.fullname" . }}-spark-master:7077"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8081
+          initialDelaySeconds: 60
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8081
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        resources:
+          {{- toYaml .Values.spark.worker.resources | nindent 10 }}
+        volumeMounts:
+        - name: spark-apps
+          mountPath: /opt/spark-apps
+      volumes:
+      - name: spark-apps
+        emptyDir: {}
+{{- end }}

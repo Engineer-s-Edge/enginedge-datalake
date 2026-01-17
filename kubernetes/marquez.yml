@@ -1,0 +1,136 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: marquez-db-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: marquez-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: marquez-db
+  template:
+    metadata:
+      labels:
+        app: marquez-db
+    spec:
+      containers:
+        - name: marquez-db
+          image: postgres:14
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              value: marquez
+            - name: POSTGRES_PASSWORD
+              value: marquez
+            - name: POSTGRES_DB
+              value: marquez
+          volumeMounts:
+            - name: marquez-data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: marquez-data
+          persistentVolumeClaim:
+            claimName: marquez-db-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: marquez-db
+spec:
+  selector:
+    app: marquez-db
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: marquez-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: marquez-api
+  template:
+    metadata:
+      labels:
+        app: marquez-api
+    spec:
+      containers:
+        - name: marquez-api
+          image: "marquezproject/marquez:0.51.1"
+          ports:
+            - containerPort: 5000
+            - containerPort: 5001
+          env:
+            - name: MARQUEZ_PORT
+              value: "5000"
+            - name: MARQUEZ_ADMIN_PORT
+              value: "5001"
+            - name: POSTGRES_HOST
+              value: marquez-db
+            - name: POSTGRES_PORT
+              value: "5432"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: marquez-api
+spec:
+  selector:
+    app: marquez-api
+  ports:
+    - name: api
+      port: 5000
+      targetPort: 5000
+    - name: admin
+      port: 5001
+      targetPort: 5001
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: marquez-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: marquez-web
+  template:
+    metadata:
+      labels:
+        app: marquez-web
+    spec:
+      containers:
+        - name: marquez-web
+          image: "marquezproject/marquez-web:0.51.1"
+          ports:
+            - containerPort: 3000
+          env:
+            - name: MARQUEZ_HOST
+              value: marquez-api
+            - name: MARQUEZ_PORT
+              value: "5000"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: marquez-web
+spec:
+  selector:
+    app: marquez-web
+  ports:
+    - port: 3000
+      targetPort: 3000

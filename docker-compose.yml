@@ -24,11 +24,12 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-airflow}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-airflow}
       POSTGRES_DB: ${POSTGRES_DB:-airflow}
+      TOKERN_USER_PASSWORD: ${TOKERN_USER_PASSWORD:-admin123}
     networks:
       - datalake-network
 
   hive-metastore:
-    image: bitsudata/hive:3.1.2-metastore
+    image: sslhep/hive-metastore:3.1.3
     environment:
       SERVICE_NAME: metastore
       DB_TYPE: postgres
@@ -42,28 +43,60 @@ services:
 
   spark-master:
     image: bde2020/spark-master:3.3.0-hadoop3.3
+    user: root
     ports:
       - "8080:8080"
       - "7077:7077"
     volumes:
       - ./spark/apps:/opt/spark-apps
-      - ./spark/jars:/opt/spark-jars
+      - ./spark/jars:/opt/spark/jars
     environment:
       SPARK_MASTER_HOST: spark-master
+    command: >
+      bash -c "
+        apt-get update && apt-get install -y curl python3-pip &&
+        pip3 install boto3 &&
+        cd /opt/spark/jars &&
+        curl -O https://repo1.maven.org/maven2/io/openlineage/openlineage-spark_2.12/1.39.0/openlineage-spark_2.12-1.39.0.jar &&
+        curl -O https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-spark-runtime-3.3_2.12/1.4.2/iceberg-spark-runtime-3.3_2.12-1.4.2.jar &&
+        echo 'spark.extraListeners io.openlineage.spark.agent.OpenLineageSparkListener' > /opt/spark/conf/spark-defaults.conf &&
+        echo 'spark.sql.extensions org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions' >> /opt/spark/conf/spark-defaults.conf &&
+        echo 'spark.sql.catalog.spark_catalog org.apache.iceberg.spark.SparkCatalog' >> /opt/spark/conf/spark-defaults.conf &&
+        echo 'spark.sql.catalog.spark_catalog.type hive' >> /opt/spark/conf/spark-defaults.conf &&
+        echo 'spark.sql.catalog.spark_catalog.uri thrift://hive-metastore:9083' >> /opt/spark/conf/spark-defaults.conf &&
+        echo 'spark.sql.catalog.spark_catalog.s3.endpoint http://minio:9000' >> /opt/spark/conf/spark-defaults.conf &&
+        echo 'spark.openlineage.transport.type http' >> /opt/spark/conf/spark-defaults.conf &&
+        echo 'spark.openlineage.transport.url http://marquez-api:5000' >> /opt/spark/conf/spark-defaults.conf &&
+        echo 'spark.openlineage.namespace datalake' >> /opt/spark/conf/spark-defaults.conf &&
+        chown -R spark:spark /opt/spark/conf &&
+        chown -R spark:spark /opt/spark/jars &&
+        su spark -c '/opt/spark/bin/spark-class org.apache.spark.deploy.master.Master'
+      "
     networks:
       - datalake-network
 
   spark-worker:
     image: bde2020/spark-worker:3.3.0-hadoop3.3
+    user: root
     depends_on:
       - spark-master
     ports:
       - "8081:8081"
     volumes:
       - ./spark/apps:/opt/spark-apps
-      - ./spark/jars:/opt/spark-jars
+      - ./spark/jars:/opt/spark/jars
     environment:
       SPARK_MASTER: spark://spark-master:7077
+    command: >
+      bash -c "
+        apt-get update && apt-get install -y curl python3-pip &&
+        pip3 install boto3 &&
+        cd /opt/spark/jars &&
+        curl -O https://repo1.maven.org/maven2/io/openlineage/openlineage-spark_2.12/1.39.0/openlineage-spark_2.12-1.39.0.jar &&
+        curl -O https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-spark-runtime-3.3_2.12/1.4.2/iceberg-spark-runtime-3.3_2.12-1.4.2.jar &&
+        chown -R spark:spark /opt/spark/jars &&
+        su spark -c '/opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077'
+      "
     networks:
       - datalake-network
 
@@ -80,7 +113,8 @@ services:
       - datalake-network
 
   airflow:
-    image: apache/airflow:2.6.3
+    build:
+      context: ./airflow
     ports:
       - "8082:8080"
     volumes:
@@ -96,6 +130,7 @@ services:
       _AIRFLOW_WWW_USER_CREATE: "true"
       _AIRFLOW_WWW_USER_USERNAME: ${AIRFLOW_USER:-admin}
       _AIRFLOW_WWW_USER_PASSWORD: ${AIRFLOW_PASSWORD:-admin123}
+      AIRFLOW__OPENLINEAGE__TRANSPORT: '{"type": "http", "url": "http://marquez-api:5000"}'
     depends_on:
       - postgres
     networks:
@@ -113,7 +148,7 @@ services:
       - datalake-network
 
   great_expectations:
-    image: greatexpectations/great_expectations:0.18.9
+    image: powerdatahub/great-expectations-docker:0.8.7
     ports:
       - "4000:8000"
     volumes:
@@ -125,11 +160,119 @@ services:
       - datalake-network
     command: "python -m http.server 8000 -d /usr/app/great_expectations/uncommitted/data_docs/local_site"
 
+  marquez-api:
+    image: "marquezproject/marquez:0.51.1"
+    container_name: marquez-api
+    ports:
+      - "5000:5000"
+      - "5001:5001"
+    environment:
+      - MARQUEZ_PORT=5000
+      - MARQUEZ_ADMIN_PORT=5001
+      - POSTGRES_HOST=marquez-db
+      - POSTGRES_PORT=5432
+    depends_on:
+      - marquez-db
+    networks:
+      - datalake-network
+
+  marquez-db:
+    image: postgres:14
+    container_name: marquez-db
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_USER=marquez
+      - POSTGRES_PASSWORD=marquez
+      - POSTGRES_DB=marquez
+    volumes:
+      - marquez_data:/var/lib/postgresql/data
+    networks:
+      - datalake-network
+
+  marquez-web:
+    image: "marquezproject/marquez-web:0.51.1"
+    container_name: marquez-web
+    ports:
+      - "3001:3000"
+    environment:
+      - MARQUEZ_HOST=marquez-api
+      - MARQUEZ_PORT=5000
+    depends_on:
+      - marquez-api
+    networks:
+      - datalake-network
+
+  datalake-observability:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: datalake-observability
+    ports:
+      - "3010:3010"
+    environment:
+      - PORT=3010
+      - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_CONSOLE_URL=http://minio:9001
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin123
+      - TRINO_URL=http://trino:8080
+      - AIRFLOW_URL=http://airflow:8080
+      - SPARK_MASTER_URL=http://spark-master:8080
+      - JUPYTER_URL=http://jupyter:8888
+      - POSTGRES_URL=postgres:5432
+      - MARQUEZ_API_URL=http://marquez-api:5000
+      - MARQUEZ_WEB_URL=http://marquez-web:3000
+    depends_on:
+      - minio
+      - trino
+      - airflow
+      - spark-master
+    networks:
+      - datalake-network
+
+  tokern-redis:
+    image: redis:6.2.6-alpine
+    container_name: tokern-redis
+    restart: unless-stopped
+    networks:
+      - datalake-network
+
+  tokern-api:
+    image: tokern/data-lineage:latest
+    container_name: tokern-data-lineage
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - tokern-redis
+    networks:
+      - datalake-network
+    environment:
+      CATALOG_PASSWORD: ${TOKERN_USER_PASSWORD:-admin123}
+      CATALOG_USER: tokern_admin
+      CATALOG_DB: ${POSTGRES_DB:-airflow}
+      CATALOG_HOST: postgres
+      CATALOG_PORT: 5432
+      GUNICORN_CMD_ARGS: "--bind 0.0.0.0:4142"
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      REDIS_HOST: tokern-redis
+      REDIS_PORT: ${REDIS_PORT:-6379}
+
+  tokern-viz:
+    image: tokern/data-lineage-viz:latest
+    container_name: tokern-data-lineage-visualizer
+    restart: unless-stopped
+    networks:
+      - datalake-network
+    ports:
+      - "8001:80"
+
 volumes:
   minio_data:
   postgres_data:
   airflow_logs:
   airflow_plugins:
+  marquez_data:
 
 networks:
   datalake-network:

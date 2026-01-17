@@ -1,0 +1,169 @@
+# Production Environment Values
+# High availability and resource allocation for production
+
+global:
+  namespace: datalake-prod
+  labels:
+    environment: production
+
+# Production-grade resources
+minio:
+  replicaCount: 3  # HA setup
+  persistence:
+    enabled: true
+    storageClass: "fast-ssd"
+    size: 100Gi
+  resources:
+    requests:
+      memory: "2Gi"
+      cpu: "1000m"
+    limits:
+      memory: "4Gi"
+      cpu: "2000m"
+  metrics:
+    enabled: true
+
+postgres:
+  replicaCount: 1
+  persistence:
+    enabled: true
+    storageClass: "fast-ssd"
+    size: 50Gi
+  resources:
+    requests:
+      memory: "2Gi"
+      cpu: "1000m"
+    limits:
+      memory: "4Gi"
+      cpu: "2000m"
+  metrics:
+    enabled: true
+
+trino:
+  replicaCount: 3
+  resources:
+    requests:
+      memory: "8Gi"
+      cpu: "4000m"
+    limits:
+      memory: "16Gi"
+      cpu: "8000m"
+  config:
+    maxMemory: 8GB
+    maxMemoryPerNode: 4GB
+  metrics:
+    enabled: true
+
+spark:
+  master:
+    replicaCount: 2
+    resources:
+      requests:
+        memory: "4Gi"
+        cpu: "2000m"
+      limits:
+        memory: "8Gi"
+        cpu: "4000m"
+  worker:
+    replicaCount: 5
+    resources:
+      requests:
+        memory: "8Gi"
+        cpu: "4000m"
+      limits:
+        memory: "16Gi"
+        cpu: "8000m"
+  metrics:
+    enabled: true
+
+airflow:
+  replicaCount: 2
+  persistence:
+    logs:
+      enabled: true
+      storageClass: "fast-ssd"
+      size: 20Gi
+    plugins:
+      enabled: true
+      storageClass: "fast-ssd"
+      size: 5Gi
+  resources:
+    requests:
+      memory: "2Gi"
+      cpu: "1000m"
+    limits:
+      memory: "4Gi"
+      cpu: "2000m"
+  metrics:
+    enabled: true
+
+hiveMetastore:
+  replicaCount: 2
+  resources:
+    requests:
+      memory: "2Gi"
+      cpu: "1000m"
+    limits:
+      memory: "4Gi"
+      cpu: "2000m"
+
+# Enable all components in production
+jupyter:
+  enabled: true
+  persistence:
+    enabled: true
+    storageClass: "fast-ssd"
+    size: 20Gi
+
+greatExpectations:
+  enabled: true
+  persistence:
+    enabled: true
+    storageClass: "standard"
+    size: 5Gi
+
+tokern:
+  enabled: true
+
+marquez:
+  enabled: true
+  db:
+    persistence:
+      enabled: true
+      storageClass: "fast-ssd"
+      size: 20Gi
+
+observability:
+  enabled: true
+
+# Enable monitoring
+serviceMonitor:
+  enabled: true
+  interval: 30s
+  scrapeTimeout: 10s
+  labels:
+    prometheus: kube-prometheus
+
+# Enable ingress for production
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  hosts:
+    - host: datalake.example.com
+      paths:
+        - path: /trino
+          pathType: Prefix
+          service: trino
+        - path: /airflow
+          pathType: Prefix
+          service: airflow
+        - path: /spark
+          pathType: Prefix
+          service: spark-master
+  tls:
+    - secretName: datalake-tls
+      hosts:
+        - datalake.example.com

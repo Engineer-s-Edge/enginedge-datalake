@@ -1,0 +1,25 @@
+{{- if .Values.trino.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "datalake.fullname" . }}-trino-catalog
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "datalake.trino.labels" . | nindent 4 }}
+data:
+  hive.properties: |
+    connector.name=hive
+    hive.metastore.uri=thrift://hive-metastore:9083
+    hive.s3.endpoint=http://minio:9000
+    hive.s3.path-style-access=true
+    hive.s3.aws-access-key={{ .Values.minio.rootUser }}
+    hive.s3.aws-secret-key={{ .Values.minio.rootPassword }}
+    hive.allow-drop-table=true
+    hive.allow-rename-table=true
+    hive.allow-add-column=true
+    hive.allow-drop-column=true
+    hive.allow-rename-column=true
+    
+  memory.properties: |
+    connector.name=memory
+{{- end }}

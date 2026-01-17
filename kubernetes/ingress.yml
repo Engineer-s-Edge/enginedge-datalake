@@ -1,0 +1,202 @@
+---
+# Basic Auth Secret for Airflow
+# Generate password with: htpasswd -nb admin yourpassword | base64
+apiVersion: v1
+kind: Secret
+metadata:
+  name: airflow-basic-auth
+  namespace: default
+type: Opaque
+data:
+  # Default: admin / airflow123
+  # To generate: echo -n "admin:$(openssl passwd -apr1 airflow123)" | base64
+  auth: YWRtaW46JGFwcjEkLnhCSi9HZEckSnVtV0VLUXo3Y1BKdDN1dS91L0htLwo=
+---
+# Basic Auth Secret for Trino
+apiVersion: v1
+kind: Secret
+metadata:
+  name: trino-basic-auth
+  namespace: default
+type: Opaque
+data:
+  # Default: admin / trino123
+  # To generate: echo -n "admin:$(openssl passwd -apr1 trino123)" | base64
+  auth: YWRtaW46JGFwcjEkV0U5TDRhNnQkZWFiU2Z5RnB5YUdVdEZrRjNkTHp6MAo=
+---
+# Ingress for Airflow with Basic Auth
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: airflow-ingress
+  namespace: default
+  annotations:
+    # Basic authentication
+    nginx.ingress.kubernetes.io/auth-type: basic
+    nginx.ingress.kubernetes.io/auth-secret: airflow-basic-auth
+    nginx.ingress.kubernetes.io/auth-realm: 'Authentication Required - Airflow'
+    
+    # SSL/TLS configuration
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    
+    # Security headers
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "X-Frame-Options: DENY";
+      more_set_headers "X-Content-Type-Options: nosniff";
+      more_set_headers "X-XSS-Protection: 1; mode=block";
+      more_set_headers "Strict-Transport-Security: max-age=31536000; includeSubDomains";
+    
+    # Rate limiting to prevent brute force
+    nginx.ingress.kubernetes.io/limit-rps: "10"
+    nginx.ingress.kubernetes.io/limit-connections: "5"
+    
+    # Whitelist IPs (optional - uncomment and set your IPs)
+    # nginx.ingress.kubernetes.io/whitelist-source-range: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
+    
+    # Certificate manager (if using cert-manager)
+    # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    
+    # Additional annotations
+    kubernetes.io/ingress.class: nginx
+    
+spec:
+  # TLS configuration (uncomment if using TLS)
+  # tls:
+  #   - hosts:
+  #       - airflow.yourdomain.com
+  #     secretName: airflow-tls-cert
+  
+  rules:
+    - host: airflow.datalake.local  # Change to your domain
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: airflow
+                port:
+                  number: 8080
+---
+# Ingress for Trino with Basic Auth
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: trino-ingress
+  namespace: default
+  annotations:
+    # Basic authentication
+    nginx.ingress.kubernetes.io/auth-type: basic
+    nginx.ingress.kubernetes.io/auth-secret: trino-basic-auth
+    nginx.ingress.kubernetes.io/auth-realm: 'Authentication Required - Trino'
+    
+    # SSL/TLS configuration
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    
+    # Security headers
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "X-Frame-Options: DENY";
+      more_set_headers "X-Content-Type-Options: nosniff";
+      more_set_headers "X-XSS-Protection: 1; mode=block";
+      more_set_headers "Strict-Transport-Security: max-age=31536000; includeSubDomains";
+    
+    # Rate limiting
+    nginx.ingress.kubernetes.io/limit-rps: "10"
+    nginx.ingress.kubernetes.io/limit-connections: "5"
+    
+    # Whitelist IPs (optional - uncomment and set your IPs)
+    # nginx.ingress.kubernetes.io/whitelist-source-range: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
+    
+    # Certificate manager (if using cert-manager)
+    # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    
+    # Additional annotations
+    kubernetes.io/ingress.class: nginx
+    
+    # Trino-specific configurations
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"  # No limit for query results
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"  # 1 hour for long queries
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    
+spec:
+  # TLS configuration (uncomment if using TLS)
+  # tls:
+  #   - hosts:
+  #       - trino.yourdomain.com
+  #     secretName: trino-tls-cert
+  
+  rules:
+    - host: trino.datalake.local  # Change to your domain
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: trino
+                port:
+                  number: 8080
+---
+# NetworkPolicy for Airflow - only allow ingress controller
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: airflow-network-policy
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      app: airflow
+  policyTypes:
+    - Ingress
+  ingress:
+    # Allow from ingress controller
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8080
+    # Allow from within cluster (for internal services)
+    - from:
+        - podSelector: {}
+      ports:
+        - protocol: TCP
+          port: 8080
+---
+# NetworkPolicy for Trino - only allow ingress controller
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: trino-network-policy
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      app: trino
+  policyTypes:
+    - Ingress
+  ingress:
+    # Allow from ingress controller
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8080
+    # Allow from within cluster (for internal services)
+    - from:
+        - podSelector: {}
+      ports:
+        - protocol: TCP
+          port: 8080

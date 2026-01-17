@@ -1,0 +1,31 @@
+{{- if and .Values.spark.enabled .Values.spark.metrics.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "datalake.fullname" . }}-spark-jmx-config
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "datalake.spark-master.labels" . | nindent 4 }}
+data:
+  config.yml: |
+    ---
+    lowercaseOutputName: true
+    lowercaseOutputLabelNames: true
+    whitelistObjectNames:
+      - "java.lang:type=*"
+      - "java.nio:type=BufferPool,name=*"
+      - "metrics:name=*"
+    rules:
+      - pattern: 'java.lang<type=(.+), name=(.+)><>(\w+):'
+        name: java_lang_$1_$3
+        labels:
+          name: "$2"
+      - pattern: 'java.nio<type=BufferPool, name=(.+)><>(\w+):'
+        name: java_nio_bufferpool_$2
+        labels:
+          pool: "$1"
+      - pattern: 'metrics<name=(.+)><>(\w+):'
+        name: spark_$2
+        labels:
+          metric: "$1"
+{{- end }}

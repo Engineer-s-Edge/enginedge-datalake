@@ -1,0 +1,20 @@
+{{- if .Values.postgres.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "datalake.fullname" . }}-postgres-init
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "datalake.postgres.labels" . | nindent 4 }}
+data:
+  01-init-tokern.sql: |
+    -- Create tokern user and grant permissions
+    CREATE USER tokern_admin WITH PASSWORD '{{ .Values.postgres.tokernUserPassword }}';
+    GRANT ALL PRIVILEGES ON DATABASE {{ .Values.postgres.database }} TO tokern_admin;
+    
+  02-init-marquez.sql: |
+    -- Create marquez database
+    CREATE DATABASE marquez;
+    CREATE USER marquez WITH PASSWORD 'marquez';
+    GRANT ALL PRIVILEGES ON DATABASE marquez TO marquez;
+{{- end }}
