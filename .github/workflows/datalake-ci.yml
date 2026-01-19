@@ -6,14 +6,13 @@ on:
       - main
       - dev
       - staging
+    tags:
+      - 'v*.*.*'
+      - 'datalake-v*.*.*'
   pull_request:
     branches:
       - main
       - dev
-  push:
-    tags:
-      - 'v*.*.*'
-      - 'datalake-v*.*.*'
 
 env:
   REGISTRY: ghcr.io
