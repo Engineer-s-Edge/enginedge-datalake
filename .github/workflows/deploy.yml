@@ -16,10 +16,9 @@ on:
         required: true
         default: 'main'
   push:
-    branches:
-      - main
     tags:
-      - 'v*'
+      - 'v*.*.*'
+      - 'datalake-v*.*.*'
 
 env:
   REGISTRY: ghcr.io
